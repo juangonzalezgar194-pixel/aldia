@@ -1,0 +1,49 @@
+# =========================================================
+# Dockerfile - Backend AlDia (Spring Boot)
+# GA7-220501097-AA6-EV02 - Contenerizacion con Docker
+# =========================================================
+# Este Dockerfile va DENTRO de la carpeta /backend del proyecto
+# (junto a pom.xml y mvnw). Docker Compose lo referencia con
+# build: { context: ./backend }
+
+# ---- Etapa 1: Construccion (build) ----
+FROM eclipse-temurin:17-jdk-jammy AS build
+
+WORKDIR /app
+
+# Copiamos primero el wrapper y el pom.xml para aprovechar la
+# cache de capas de Docker: si las dependencias no cambian,
+# Docker no las vuelve a descargar en cada build.
+COPY mvnw .
+COPY .mvn/ .mvn/
+COPY pom.xml .
+
+# Damos permisos de ejecucion al wrapper (a veces se pierden en Windows/Git)
+RUN chmod +x mvnw
+
+# Descargamos dependencias sin compilar todavia (mejora la cache)
+RUN ./mvnw dependency:go-offline -B
+
+# Ahora copiamos el codigo fuente completo
+COPY src/ src/
+
+# Compilamos el proyecto y generamos el JAR, saltando los tests
+# (los tests unitarios ya se corren aparte, en la EV03 de AA1)
+RUN ./mvnw clean package -DskipTests -B
+
+# ---- Etapa 2: Ejecucion (runtime) ----
+# Usamos una imagen mas liviana, solo con el JRE, para la imagen final
+FROM eclipse-temurin:17-jre-jammy
+
+WORKDIR /app
+
+# Copiamos SOLO el .jar generado en la etapa anterior
+COPY --from=build /app/target/*.jar app.jar
+
+# Puerto en el que corre Spring Boot (definido en application.properties)
+EXPOSE 8080
+
+# Variables de entorno por defecto (se sobre-escriben desde docker-compose/.env)
+ENV SPRING_PROFILES_ACTIVE=docker
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

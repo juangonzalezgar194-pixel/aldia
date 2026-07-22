@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://aldia.com/soap"
+           targetNamespace="http://aldia.com/soap"
+           elementFormDefault="qualified">
+
+    <!-- ══ CONSULTAR INMUEBLE POR ID ══ -->
+    <xs:element name="consultarInmuebleRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="consultarInmuebleResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+                <xs:element name="direccion" type="xs:string"/>
+                <xs:element name="ciudad" type="xs:string"/>
+                <xs:element name="departamento" type="xs:string"/>
+                <xs:element name="tipo" type="xs:string"/>
+                <xs:element name="descripcion" type="xs:string"/>
+                <xs:element name="activo" type="xs:boolean"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- ══ LISTAR INMUEBLES ══ -->
+    <xs:element name="listarInmueblesRequest">
+        <xs:complexType>
+            <xs:sequence/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="listarInmueblesResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="inmuebles" type="tns:InmuebleItem" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="InmuebleItem">
+        <xs:sequence>
+            <xs:element name="id" type="xs:long"/>
+            <xs:element name="direccion" type="xs:string"/>
+            <xs:element name="ciudad" type="xs:string"/>
+            <xs:element name="tipo" type="xs:string"/>
+            <xs:element name="activo" type="xs:boolean"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- ══ CONSULTAR CONTRATO POR ID ══ -->
+    <xs:element name="consultarContratoRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="consultarContratoResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+                <xs:element name="inmuebleId" type="xs:long"/>
+                <xs:element name="arrendatarioId" type="xs:long"/>
+                <xs:element name="fechaInicio" type="xs:string"/>
+                <xs:element name="fechaFin" type="xs:string"/>
+                <xs:element name="valorMensual" type="xs:decimal"/>
+                <xs:element name="estado" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
