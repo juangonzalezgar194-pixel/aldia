@@ -1,0 +1,91 @@
+# =========================================================
+# docker-compose.yml - Proyecto AlDia
+# GA7-220501097-AA6-EV02 - Contenerizacion con Docker
+# =========================================================
+# Este archivo va en la RAIZ del proyecto (al mismo nivel que
+# las carpetas /backend y /frontend).
+#
+# Comandos principales:
+#   docker-compose up -d --build   -> construye y levanta todo
+#   docker-compose logs -f backend -> ver logs del backend
+#   docker-compose down            -> apaga todo
+#   docker-compose down -v         -> apaga todo y BORRA los datos de MySQL
+
+services:
+
+  # ---------------------------------------------------
+  # Base de datos MySQL
+  # ---------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: aldia_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"   # 3307 afuera para no chocar con XAMPP (3306) si sigue instalado
+    volumes:
+      - aldia_mysql_data:/var/lib/mysql
+    networks:
+      - aldia_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------
+  # Backend Spring Boot
+  # ---------------------------------------------------
+  backend:
+    build:
+      context: ./aldía-backend
+      dockerfile: Dockerfile.backend
+    container_name: aldía_backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "8080:8080"
+    networks:
+      - aldia_network
+
+  # ---------------------------------------------------
+  # Frontend Flutter Web (servido con Nginx)
+  # ---------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: aldia_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"
+    networks:
+      - aldia_network
+
+# ---------------------------------------------------
+# Volumenes: persisten los datos de MySQL aunque se
+# apaguen o borren los contenedores
+# ---------------------------------------------------
+volumes:
+  aldia_mysql_data:
+
+# ---------------------------------------------------
+# Red interna: permite que backend, frontend y mysql
+# se comuniquen entre si por su nombre de servicio
+# ---------------------------------------------------
+networks:
+  aldia_network:
+    driver: bridge

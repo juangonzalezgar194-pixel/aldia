@@ -1,0 +1,39 @@
+# =========================================================
+# Dockerfile - Frontend AlDia (Flutter Web)
+# GA7-220501097-AA6-EV02 - Contenerizacion con Docker
+# =========================================================
+# Este Dockerfile va DENTRO de la carpeta /frontend del proyecto
+# (junto a pubspec.yaml). Docker Compose lo referencia con
+# build: { context: ./frontend }
+
+# ---- Etapa 1: Construccion (build) ----
+# No existe imagen oficial de Flutter, usamos una imagen que ya
+# trae el SDK instalado sobre Debian.
+FROM ghcr.io/cirruslabs/flutter:3.35.0 AS build
+
+WORKDIR /app
+
+# Copiamos primero pubspec para aprovechar cache de dependencias
+COPY pubspec.yaml pubspec.lock ./
+RUN flutter pub get
+
+# Copiamos el resto del codigo fuente
+COPY . .
+
+# Compilamos la version web en modo release
+RUN flutter build web --release
+
+# ---- Etapa 2: Servidor (runtime) ----
+# Servimos los archivos estaticos generados con Nginx
+FROM nginx:1.27-alpine
+
+# Copiamos el build de Flutter Web a la carpeta que sirve Nginx
+COPY --from=build /app/build/web /usr/share/nginx/html
+
+# Configuracion de Nginx para que las rutas de Flutter (SPA) funcionen
+# correctamente al recargar la pagina (evita error 404 en rutas internas)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
