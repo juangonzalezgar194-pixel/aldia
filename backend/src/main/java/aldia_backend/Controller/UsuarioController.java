@@ -7,7 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +30,8 @@ public class UsuarioController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    private final String UPLOAD_DIR_PERFILES = "uploads/perfiles/";
 
     @GetMapping
     public List<Usuario> listar() {
@@ -53,6 +60,30 @@ public class UsuarioController {
             usuario.setTelefono(datos.getTelefono());
             usuario.setActivo(datos.isActivo());
             return ResponseEntity.ok(usuarioRepository.save(usuario));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/foto")
+    public ResponseEntity<?> subirFotoPerfil(
+            @PathVariable Long id,
+            @RequestParam("archivo") MultipartFile archivo) {
+
+        return usuarioRepository.findById(id).map(usuario -> {
+            try {
+                File carpeta = new File(UPLOAD_DIR_PERFILES);
+                if (!carpeta.exists()) carpeta.mkdirs();
+
+                String nombreArchivo = "usuario_" + id + "_" + System.currentTimeMillis() + "_" + archivo.getOriginalFilename();
+                Path ruta = Paths.get(UPLOAD_DIR_PERFILES + nombreArchivo);
+                Files.write(ruta, archivo.getBytes());
+
+                usuario.setFotoUrl("/uploads/perfiles/" + nombreArchivo);
+                usuarioRepository.save(usuario);
+
+                return ResponseEntity.ok(usuario);
+            } catch (IOException e) {
+                return ResponseEntity.status(500).body("Error al subir la foto: " + e.getMessage());
+            }
         }).orElse(ResponseEntity.notFound().build());
     }
 

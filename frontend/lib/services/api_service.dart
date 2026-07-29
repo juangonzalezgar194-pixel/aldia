@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
 static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
+static const String serverUrl = 'http://127.0.0.1:8080';
   // LOGIN
   static Future<Map<String, dynamic>?> login(String correo, String contrasena) async {
     try {
@@ -178,6 +179,34 @@ static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
       }
     } catch (e) {
       print('Error de conexión: $e');
+      return null;
+    }
+  }
+
+  // SUBIR FOTO DE PERFIL
+  static Future<Map<String, dynamic>?> subirFotoPerfil(int usuarioId, List<int> bytes, String nombreArchivo) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/usuarios/$usuarioId/foto'),
+      );
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'archivo',
+          bytes,
+          filename: nombreArchivo,
+        ),
+      );
+      final response = await request.send();
+      final respuesta = await http.Response.fromStream(response);
+
+      if (respuesta.statusCode == 200) {
+        return jsonDecode(respuesta.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error al subir foto: $e');
       return null;
     }
   }

@@ -54,15 +54,20 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 CircleAvatar(
                   radius: 48,
                   backgroundColor: AppColors.azulPrincipal,
-                  child: Text(
-                    nombre.isNotEmpty ? nombre[0].toUpperCase() : 'U',
-                    style: const TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      fontFamily: 'Nunito',
-                    ),
-                  ),
+                  backgroundImage: _usuario?['fotoUrl'] != null
+                      ? NetworkImage('${ApiService.serverUrl}${_usuario!['fotoUrl']}')
+                      : null,
+                  child: _usuario?['fotoUrl'] == null
+                      ? Text(
+                          nombre.isNotEmpty ? nombre[0].toUpperCase() : 'U',
+                          style: const TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            fontFamily: 'Nunito',
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 Text(

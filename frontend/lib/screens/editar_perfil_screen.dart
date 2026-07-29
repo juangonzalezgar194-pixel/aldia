@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:aldia/theme/app_theme.dart';
 import 'package:aldia/services/api_service.dart';
 
@@ -26,6 +28,11 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   bool _guardando = false;
   String? _error;
 
+  // Estado para la foto de perfil
+  List<int>? _fotoBytes;
+  String? _fotoNombre;
+  bool _subiendoFoto = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +49,49 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
     _correoCtrl.dispose();
     _telefonoCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _seleccionarFoto() async {
+    final resultado = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+
+    if (resultado != null && resultado.files.single.bytes != null) {
+      setState(() {
+        _fotoBytes = resultado.files.single.bytes;
+        _fotoNombre = resultado.files.single.name;
+      });
+    }
+  }
+
+  Future<void> _subirFoto() async {
+    if (_fotoBytes == null || _fotoNombre == null) return;
+
+    setState(() => _subiendoFoto = true);
+
+    final resultado = await ApiService.subirFotoPerfil(
+      widget.usuarioId,
+      _fotoBytes!,
+      _fotoNombre!,
+    );
+
+    setState(() => _subiendoFoto = false);
+
+    if (resultado != null && mounted) {
+      setState(() {
+        widget.usuarioActual['fotoUrl'] = resultado['fotoUrl'];
+        _fotoBytes = null;
+        _fotoNombre = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto actualizada')),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo subir la foto')),
+      );
+    }
   }
 
   Future<void> _guardar() async {
@@ -65,7 +115,6 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
     if (!mounted) return;
 
     if (exito) {
-      // Devolvemos los datos actualizados para refrescar la pantalla anterior
       Navigator.pop(context, {...widget.usuarioActual, ...datos});
     } else {
       setState(() {
@@ -99,6 +148,59 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // --- Foto de perfil ---
+              Center(
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 48,
+                      backgroundColor: AppColors.azulPrincipal,
+                      backgroundImage: _fotoBytes != null
+                          ? MemoryImage(Uint8List.fromList(_fotoBytes!))
+                          : (widget.usuarioActual['fotoUrl'] != null
+                              ? NetworkImage('${ApiService.serverUrl}${widget.usuarioActual['fotoUrl']}')
+                              : null) as ImageProvider?,
+                      child: (_fotoBytes == null && widget.usuarioActual['fotoUrl'] == null)
+                          ? Text(
+                              (widget.usuarioActual['nombre'] ?? 'U').toString().isNotEmpty
+                                  ? widget.usuarioActual['nombre'][0].toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(fontSize: 36, color: Colors.white, fontFamily: 'Nunito'),
+                            )
+                          : null,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: _seleccionarFoto,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: AppColors.esmeralda,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_fotoBytes != null) ...[
+                const SizedBox(height: 8),
+                Center(
+                  child: TextButton(
+                    onPressed: _subiendoFoto ? null : _subirFoto,
+                    child: _subiendoFoto
+                        ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('Guardar foto', style: TextStyle(fontFamily: 'Nunito')),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+
+              // --- Formulario de datos ---
               if (_error != null) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
