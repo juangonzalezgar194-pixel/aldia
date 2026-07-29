@@ -18,3 +18,11 @@ frontend/.packages
 # Sistema
 .DS_Store
 Thumbs.db
+backend/src/main/resources/application.properties
+
+# Flutter generated files
+frontend/**/generated_plugin_registrant.cc
+frontend/**/generated_plugin_registrant.h
+frontend/**/generated_plugins.cmake
+frontend/**/GeneratedPluginRegistrant.swift
+frontend/**/GeneratedPluginRegistrant.java

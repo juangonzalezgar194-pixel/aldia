@@ -127,6 +127,20 @@ static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
       return null;
     }
   }
+  // ACTUALIZAR USUARIO
+  static Future<bool> actualizarUsuario(int id, Map<String, dynamic> datos) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/usuarios/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(datos),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error de conexión: $e');
+      return false;
+    }
+  }
    // SUBIR DOCUMENTO
   static Future<bool> subirDocumento(List<int> bytes, String nombreArchivo, int contratoId) async {
     try {

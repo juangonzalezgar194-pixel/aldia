@@ -3,6 +3,7 @@ import 'package:aldia/theme/app_theme.dart';
 import 'package:aldia/screens/dashboard_screen.dart';
 import 'package:aldia/services/api_service.dart';
 import 'package:aldia/screens/login_screen.dart';
+import 'package:aldia/screens/editar_perfil_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
   final int usuarioId;
@@ -102,7 +103,22 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
                 // Opciones
                 _buildSeccion('Configuración', [
-                  _buildOpcion(Icons.edit_rounded, 'Editar perfil', AppColors.azulPrincipal, () {}),
+                  _buildOpcion(Icons.edit_rounded, 'Editar perfil', AppColors.azulPrincipal, () async {
+                    final actualizado = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EditarPerfilScreen(
+                          usuarioId: widget.usuarioId,
+                          usuarioActual: _usuario ?? {},
+                        ),
+                      ),
+                    );
+                    if (actualizado != null) {
+                      setState(() {
+                        _usuario = actualizado;
+                      });
+                    }
+                  }),
                   _buildOpcion(Icons.lock_rounded, 'Cambiar contraseña', AppColors.azulMedio, () {}),
                 ]),
                 const SizedBox(height: 16),
