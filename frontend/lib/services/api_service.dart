@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
+  static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
+
   // LOGIN
   static Future<Map<String, dynamic>?> login(String correo, String contrasena) async {
     try {
@@ -96,6 +97,24 @@ static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
     }
   }
 
+  // OBTENER PAGOS POR CONTRATO
+  static Future<List<dynamic>?> obtenerPagosPorContrato(int contratoId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/pagos/contrato/$contratoId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error de conexión: $e');
+      return null;
+    }
+  }
+
   // REGISTRAR PAGO
   static Future<bool> registrarPago(Map<String, dynamic> pago) async {
     try {
@@ -110,7 +129,41 @@ static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
       return false;
     }
   }
-// OBTENER USUARIO POR ID
+
+  // PAGAR (simulado, dinero ficticio, sin pasarela real)
+  static Future<bool> pagarPago(int pagoId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/pagos/$pagoId/pagar'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error de conexión: $e');
+      return false;
+    }
+  }
+
+  // GENERAR PAGO DEL MES ACTUAL (crea la colilla si no existe)
+  static Future<Map<String, dynamic>?> generarPagoDelMes(int contratoId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/pagos/generar/$contratoId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        print('Error al generar pago: ${response.statusCode} - ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Error de conexión: $e');
+      return null;
+    }
+  }
+
+  // OBTENER USUARIO POR ID
   static Future<Map<String, dynamic>?> obtenerUsuarioPorId(int id) async {
     try {
       final response = await http.get(
@@ -127,7 +180,8 @@ static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
       return null;
     }
   }
-   // SUBIR DOCUMENTO
+
+  // SUBIR DOCUMENTO
   static Future<bool> subirDocumento(List<int> bytes, String nombreArchivo, int contratoId) async {
     try {
       final request = http.MultipartRequest(
@@ -167,4 +221,50 @@ static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
       return null;
     }
   }
-   }
+
+  // OLVIDÉ MI CONTRASEÑA - solicitar código
+  static Future<Map<String, dynamic>> olvidePassword(String correo) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/usuarios/olvide-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'correo': correo}),
+      );
+      final data = jsonDecode(response.body);
+      return {
+        'exito': response.statusCode == 200,
+        'mensaje': data['mensaje'] ?? data['error'] ?? 'Error desconocido',
+      };
+    } catch (e) {
+      print('Error de conexión: $e');
+      return {'exito': false, 'mensaje': 'Error de conexión con el servidor'};
+    }
+  }
+
+  // RESET PASSWORD - validar código y cambiar contraseña
+  static Future<Map<String, dynamic>> resetPassword(
+    String correo,
+    String codigo,
+    String nuevaContrasena,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/usuarios/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'correo': correo,
+          'codigo': codigo,
+          'nuevaContrasena': nuevaContrasena,
+        }),
+      );
+      final data = jsonDecode(response.body);
+      return {
+        'exito': response.statusCode == 200,
+        'mensaje': data['mensaje'] ?? data['error'] ?? 'Error desconocido',
+      };
+    } catch (e) {
+      print('Error de conexión: $e');
+      return {'exito': false, 'mensaje': 'Error de conexión con el servidor'};
+    }
+  }
+}

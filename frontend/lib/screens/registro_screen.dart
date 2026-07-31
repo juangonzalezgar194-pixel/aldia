@@ -1,8 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:aldia/theme/app_theme.dart';
 import 'package:aldia/widgets/aldia_logo.dart';
 import 'package:aldia/services/usuario_service.dart';
+
 class RegistroScreen extends StatefulWidget {
   const RegistroScreen({super.key});
 
@@ -67,6 +69,7 @@ class _RegistroScreenState extends State<RegistroScreen>
       contrasena: _passwordController.text,
       numDocumento: _documentoController.text.trim(),
       telefono: _telefonoController.text.trim(),
+      rol: _rolSeleccionado, // NUEVO: ahora sí se envía el rol elegido
     );
 
     setState(() => _cargando = false);
@@ -98,19 +101,19 @@ class _RegistroScreenState extends State<RegistroScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.grisClaro,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppColors.blanco,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.azulPrincipal, size: 20),
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Crear cuenta',
           style: TextStyle(
-            color: AppColors.azulPrincipal,
+            color: Colors.white,
             fontFamily: 'Nunito',
             fontWeight: FontWeight.w800,
             fontSize: 18,
@@ -118,289 +121,308 @@ class _RegistroScreenState extends State<RegistroScreen>
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: AlDiaLogo(size: 52, showText: false),
-                  ),
-                  const SizedBox(height: 20),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Fondo: foto del edificio
+          Image.asset(
+            'assets/images/login_background.jpg',
+            fit: BoxFit.cover,
+          ),
+          // Degradado oscuro encima
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xCC0B1B2B),
+                  Color(0x991A3A5C),
+                  Color(0xE60B1B2B),
+                ],
+                stops: [0.0, 0.45, 1.0],
+              ),
+            ),
+          ),
+          // Contenido
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                child: Column(
+                  children: [
+                    const Center(child: AlDiaLogo(size: 56, showText: false)),
+                    const SizedBox(height: 20),
+                    _buildGlassCard(),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                  _sectionTitle('¿Cuál es tu rol?'),
-                  const SizedBox(height: 12),
-                  _rolSelector(),
+  Widget _buildGlassCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.14),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.25),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.25),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _sectionTitle('¿Cuál es tu rol?'),
+                const SizedBox(height: 12),
+                _rolSelector(),
 
-                  const SizedBox(height: 28),
-                  _sectionTitle('Datos personales'),
-                  const SizedBox(height: 16),
+                const SizedBox(height: 24),
+                _sectionTitle('Datos personales'),
+                const SizedBox(height: 16),
 
-                  _labelCampo('Nombre completo'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _nombreController,
-                    textCapitalization: TextCapitalization.words,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      hintText: 'Ej: Carlos Andrés Pérez',
-                      prefixIcon: Icon(Icons.person_outline_rounded,
-                          color: AppColors.grisMedio, size: 20),
+                _labelCampo('Nombre completo'),
+                const SizedBox(height: 8),
+                _glassTextField(
+                  controller: _nombreController,
+                  hint: 'Ej: Carlos Andrés Pérez',
+                  icon: Icons.person_outline_rounded,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Ingresa tu nombre';
+                    if (v.trim().split(' ').length < 2) return 'Ingresa nombre y apellido';
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                _labelCampo('Apellido'),
+                const SizedBox(height: 8),
+                _glassTextField(
+                  controller: _apellidoController,
+                  hint: 'Ej: Pérez Gómez',
+                  icon: Icons.person_outline_rounded,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Ingresa tu apellido';
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                _labelCampo('Nombre de usuario'),
+                const SizedBox(height: 8),
+                _glassTextField(
+                  controller: _nombreUsuarioController,
+                  hint: 'Ej: juanperez23',
+                  icon: Icons.alternate_email_rounded,
+                  textInputAction: TextInputAction.next,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Ingresa un nombre de usuario';
+                    if (v.trim().length < 4) return 'Mínimo 4 caracteres';
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                _labelCampo('Número de documento'),
+                const SizedBox(height: 8),
+                _glassTextField(
+                  controller: _documentoController,
+                  hint: 'Cédula de ciudadanía',
+                  icon: Icons.badge_outlined,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Ingresa tu documento';
+                    if (v.length < 6) return 'Documento inválido';
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                _labelCampo('Teléfono celular'),
+                const SizedBox(height: 8),
+                _glassTextField(
+                  controller: _telefonoController,
+                  hint: '300 000 0000',
+                  icon: Icons.phone_outlined,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  prefixText: '+57 ',
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Ingresa tu teléfono';
+                    if (v.length < 10) return 'Teléfono inválido';
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                _labelCampo('Correo electrónico'),
+                const SizedBox(height: 8),
+                _glassTextField(
+                  controller: _correoController,
+                  hint: 'ejemplo@correo.com',
+                  icon: Icons.mail_outline_rounded,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Ingresa tu correo';
+                    if (!v.contains('@') || !v.contains('.')) return 'Correo inválido';
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 24),
+                _sectionTitle('Seguridad'),
+                const SizedBox(height: 16),
+
+                _labelCampo('Contraseña'),
+                const SizedBox(height: 8),
+                _glassTextField(
+                  controller: _passwordController,
+                  hint: 'Mínimo 8 caracteres',
+                  icon: Icons.lock_outline_rounded,
+                  obscureText: !_verPassword,
+                  textInputAction: TextInputAction.next,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _verPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: Colors.white70,
+                      size: 20,
                     ),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty)
-                        return 'Ingresa tu nombre';
-                      if (v.trim().split(' ').length < 2)
-                        return 'Ingresa nombre y apellido';
-                      return null;
-                    },
+                    onPressed: () => setState(() => _verPassword = !_verPassword),
                   ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Ingresa una contraseña';
+                    if (v.length < 8) return 'Mínimo 8 caracteres';
+                    return null;
+                  },
+                ),
 
-                  const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-                  _labelCampo('Apellido'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _apellidoController,
-                    textCapitalization: TextCapitalization.words,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      hintText: 'Ej: Pérez Gómez',
-                      prefixIcon: Icon(Icons.person_outline_rounded,
-                          color: AppColors.grisMedio, size: 20),
+                _labelCampo('Confirmar contraseña'),
+                const SizedBox(height: 8),
+                _glassTextField(
+                  controller: _confirmarPasswordController,
+                  hint: 'Repite tu contraseña',
+                  icon: Icons.lock_outline_rounded,
+                  obscureText: !_verConfirmar,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _registrar(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _verConfirmar ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: Colors.white70,
+                      size: 20,
                     ),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Ingresa tu apellido';
-                      return null;
-                    },
+                    onPressed: () => setState(() => _verConfirmar = !_verConfirmar),
                   ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Confirma tu contraseña';
+                    if (v != _passwordController.text) return 'Las contraseñas no coinciden';
+                    return null;
+                  },
+                ),
 
-                  const SizedBox(height: 16),
+                const SizedBox(height: 14),
 
-                  _labelCampo('Nombre de usuario'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _nombreUsuarioController,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      hintText: 'Ej: juanperez23',
-                      prefixIcon: Icon(Icons.alternate_email_rounded,
-                          color: AppColors.grisMedio, size: 20),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Ingresa un nombre de usuario';
-                      if (v.trim().length < 4) return 'Mínimo 4 caracteres';
-                      return null;
-                    },
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.25), width: 1),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  _labelCampo('Número de documento'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _documentoController,
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.next,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    decoration: const InputDecoration(
-                      hintText: 'Cédula de ciudadanía',
-                      prefixIcon: Icon(Icons.badge_outlined,
-                          color: AppColors.grisMedio, size: 20),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Ingresa tu documento';
-                      if (v.length < 6) return 'Documento inválido';
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _labelCampo('Teléfono celular'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _telefonoController,
-                    keyboardType: TextInputType.phone,
-                    textInputAction: TextInputAction.next,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    decoration: const InputDecoration(
-                      hintText: '300 000 0000',
-                      prefixIcon: Icon(Icons.phone_outlined,
-                          color: AppColors.grisMedio, size: 20),
-                      prefixText: '+57 ',
-                      prefixStyle: TextStyle(
-                        color: AppColors.grisTexto,
-                        fontFamily: 'Nunito',
-                        fontSize: 14,
-                      ),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Ingresa tu teléfono';
-                      if (v.length < 10) return 'Teléfono inválido';
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _labelCampo('Correo electrónico'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _correoController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      hintText: 'ejemplo@correo.com',
-                      prefixIcon: Icon(Icons.mail_outline_rounded,
-                          color: AppColors.grisMedio, size: 20),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Ingresa tu correo';
-                      if (!v.contains('@') || !v.contains('.'))
-                        return 'Correo inválido';
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 28),
-                  _sectionTitle('Seguridad'),
-                  const SizedBox(height: 16),
-
-                  _labelCampo('Contraseña'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: !_verPassword,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      hintText: 'Mínimo 8 caracteres',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded,
-                          color: AppColors.grisMedio, size: 20),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _verPassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.grisMedio,
-                          size: 20,
-                        ),
-                        onPressed: () =>
-                            setState(() => _verPassword = !_verPassword),
-                      ),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Ingresa una contraseña';
-                      if (v.length < 8) return 'Mínimo 8 caracteres';
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _labelCampo('Confirmar contraseña'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _confirmarPasswordController,
-                    obscureText: !_verConfirmar,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _registrar(),
-                    decoration: InputDecoration(
-                      hintText: 'Repite tu contraseña',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded,
-                          color: AppColors.grisMedio, size: 20),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _verConfirmar
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.grisMedio,
-                          size: 20,
-                        ),
-                        onPressed: () =>
-                            setState(() => _verConfirmar = !_verConfirmar),
-                      ),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Confirma tu contraseña';
-                      if (v != _passwordController.text)
-                        return 'Las contraseñas no coinciden';
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.naranjaClaro,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: AppColors.naranja.withOpacity(0.3), width: 1),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.info_outline_rounded,
-                            color: AppColors.naranja, size: 18),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Tus datos serán tratados conforme a la Ley 1581 de 2012 (Habeas Data Colombia).',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.naranja.withOpacity(0.85),
-                              fontFamily: 'Nunito',
-                              height: 1.4,
-                            ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline_rounded, color: Colors.white70, size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Tus datos serán tratados conforme a la Ley 1581 de 2012 (Habeas Data Colombia).',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.85),
+                            fontFamily: 'Nunito',
+                            height: 1.4,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  ElevatedButton(
-                    onPressed: _cargando ? null : _registrar,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.azulPrincipal,
-                      disabledBackgroundColor:
-                          AppColors.azulPrincipal.withOpacity(0.5),
-                    ),
-                    child: _cargando
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2.5),
-                          )
-                        : const Text('Crear mi cuenta'),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Center(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                          foregroundColor: AppColors.grisMedio),
-                      child: const Text(
-                        '¿Ya tienes cuenta? Inicia sesión',
-                        style: TextStyle(fontSize: 13, fontFamily: 'Nunito'),
                       ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                ElevatedButton(
+                  onPressed: _cargando ? null : _registrar,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.esmeralda,
+                    disabledBackgroundColor: AppColors.esmeralda.withOpacity(0.5),
+                    minimumSize: const Size(double.infinity, 54),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: _cargando
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                        )
+                      : const Text(
+                          'Crear mi cuenta',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Nunito',
+                          ),
+                        ),
+                ),
+
+                const SizedBox(height: 12),
+
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(foregroundColor: Colors.white70),
+                    child: const Text(
+                      '¿Ya tienes cuenta? Inicia sesión',
+                      style: TextStyle(fontSize: 13, fontFamily: 'Nunito', color: Colors.white),
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -432,22 +454,19 @@ class _RegistroScreenState extends State<RegistroScreen>
             onTap: () => setState(() => _rolSeleccionado = rol['value'] as String),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              margin: EdgeInsets.only(
-                  right: rol['value'] == 'ARRENDATARIO' ? 8 : 0),
+              margin: EdgeInsets.only(right: rol['value'] == 'ARRENDATARIO' ? 8 : 0),
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
               decoration: BoxDecoration(
-                color: selected ? AppColors.azulPrincipal : AppColors.blanco,
+                color: selected ? AppColors.esmeralda.withOpacity(0.85) : Colors.white.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: selected
-                      ? AppColors.azulPrincipal
-                      : AppColors.azulClaro,
+                  color: selected ? AppColors.esmeralda : Colors.white.withOpacity(0.3),
                   width: 1.5,
                 ),
                 boxShadow: selected
                     ? [
                         BoxShadow(
-                          color: AppColors.azulPrincipal.withOpacity(0.2),
+                          color: AppColors.esmeralda.withOpacity(0.35),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         )
@@ -458,16 +477,16 @@ class _RegistroScreenState extends State<RegistroScreen>
                 children: [
                   Icon(
                     rol['icon'] as IconData,
-                    color: selected ? AppColors.blanco : AppColors.grisMedio,
+                    color: Colors.white,
                     size: 28,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     rol['label'] as String,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: selected ? AppColors.blanco : AppColors.azulPrincipal,
+                      color: Colors.white,
                       fontFamily: 'Nunito',
                     ),
                   ),
@@ -476,9 +495,7 @@ class _RegistroScreenState extends State<RegistroScreen>
                     rol['desc'] as String,
                     style: TextStyle(
                       fontSize: 11,
-                      color: selected
-                          ? AppColors.blanco.withOpacity(0.75)
-                          : AppColors.grisMedio,
+                      color: Colors.white.withOpacity(0.75),
                       fontFamily: 'Nunito',
                     ),
                     textAlign: TextAlign.center,
@@ -509,7 +526,7 @@ class _RegistroScreenState extends State<RegistroScreen>
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w800,
-            color: AppColors.azulPrincipal,
+            color: Colors.white,
             fontFamily: 'Nunito',
           ),
         ),
@@ -523,8 +540,61 @@ class _RegistroScreenState extends State<RegistroScreen>
       style: const TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w700,
-        color: AppColors.azulPrincipal,
+        color: Colors.white,
         fontFamily: 'Nunito',
+      ),
+    );
+  }
+
+  Widget _glassTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+    TextInputAction? textInputAction,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    String? prefixText,
+    List<TextInputFormatter>? inputFormatters,
+    void Function(String)? onFieldSubmitted,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      textCapitalization: textCapitalization,
+      obscureText: obscureText,
+      inputFormatters: inputFormatters,
+      onFieldSubmitted: onFieldSubmitted,
+      validator: validator,
+      style: const TextStyle(color: Colors.white, fontFamily: 'Nunito'),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Colors.white54),
+        prefixIcon: Icon(icon, color: Colors.white70, size: 20),
+        prefixText: prefixText,
+        prefixStyle: const TextStyle(color: Colors.white, fontFamily: 'Nunito', fontSize: 14),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.08),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.esmeralda, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Colors.redAccent),
+        ),
       ),
     );
   }

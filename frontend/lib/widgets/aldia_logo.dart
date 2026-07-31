@@ -5,21 +5,71 @@ import 'package:aldia/theme/app_theme.dart';
 class AlDiaLogo extends StatelessWidget {
   final double size;
   final bool showText;
+  final bool compact;
 
-  const AlDiaLogo({super.key, this.size = 72, this.showText = true});
+  const AlDiaLogo({
+    super.key,
+    this.size = 72,
+    this.showText = true,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final icono = SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _LogoPainter(),
+      ),
+    );
+
+    // Versión horizontal compacta: ícono + "AlDía", sin eslogan.
+    // Pensada para espacios de altura limitada, como una AppBar.
+    if (compact) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          icono,
+          if (showText) ...[
+            const SizedBox(width: 8),
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'Al',
+                    style: TextStyle(
+                      fontSize: size * 0.62,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.azulPrincipal,
+                      fontFamily: 'Nunito',
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  TextSpan(
+                    text: 'Día',
+                    style: TextStyle(
+                      fontSize: size * 0.62,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.esmeralda,
+                      fontFamily: 'Nunito',
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
+    // Versión vertical completa: ícono + "AlDía" + eslogan.
+    // Pensada para pantallas de login/registro con más espacio.
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: size,
-          height: size,
-          child: CustomPaint(
-            painter: _LogoPainter(),
-          ),
-        ),
+        icono,
         if (showText) ...[
           const SizedBox(height: 12),
           RichText(

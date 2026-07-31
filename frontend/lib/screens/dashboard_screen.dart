@@ -7,8 +7,100 @@ import 'package:aldia/widgets/aldia_logo.dart';
 import 'package:aldia/screens/perfil_screen.dart';
 import 'package:aldia/screens/contratos_screen.dart';
 import 'package:aldia/screens/enviar_aviso_screen.dart';
+import 'package:intl/intl.dart';
 
 enum RolUsuario { arrendador, arrendatario }
+
+const List<String> _mesesNombres = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
+final NumberFormat _formatoMoneda = NumberFormat.decimalPattern('es_CO');
+
+// ─────────────────────────────────────────────
+// Formatea un valor numérico (int, double o String) con separador
+// de miles y el símbolo de peso. Ej: 800000 -> "$800.000"
+// ─────────────────────────────────────────────
+String _formatearValorArriendo(dynamic valor) {
+  final numero = valor is num ? valor : num.tryParse('$valor') ?? 0;
+  return '\$${_formatoMoneda.format(numero)}';
+}
+
+// ─────────────────────────────────────────────
+// Calcula la próxima fecha de pago mensual a partir del día de pago
+// del contrato (ej: diaPago = 5 -> próximo 5 del mes, este mes o el
+// siguiente si ya pasó). Maneja correctamente el cambio de año.
+// ─────────────────────────────────────────────
+DateTime _proximaFechaPago(int diaPago) {
+  final ahora = DateTime.now();
+  final hoySinHora = DateTime(ahora.year, ahora.month, ahora.day);
+
+  DateTime candidato = DateTime(ahora.year, ahora.month, diaPago);
+
+  if (!candidato.isAfter(hoySinHora)) {
+    // Ya pasó (o es hoy) el día de pago de este mes: pasamos al siguiente mes.
+    // DateTime normaliza automáticamente si month = 13 -> enero del año siguiente.
+    candidato = DateTime(ahora.year, ahora.month + 1, diaPago);
+  }
+  return candidato;
+}
+
+String _formatearFecha(DateTime fecha) {
+  return '${fecha.day} de ${_mesesNombres[fecha.month - 1]} de ${fecha.year}';
+}
+
+int _diasHasta(DateTime fecha) {
+  final ahora = DateTime.now();
+  final hoySinHora = DateTime(ahora.year, ahora.month, ahora.day);
+  return fecha.difference(hoySinHora).inDays;
+}
+
+// ─────────────────────────────────────────────
+// Genera (o reutiliza) la colilla de pago del mes actual para el
+// contrato dado y luego navega a "Mis Pagos". Si el backend falla,
+// muestra un SnackBar y no navega.
+// ─────────────────────────────────────────────
+Future<void> _registrarPagoYNavegar({
+  required BuildContext context,
+  required int? contratoId,
+  required int usuarioId,
+}) async {
+  if (contratoId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No se encontró un contrato activo')),
+    );
+    return;
+  }
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(child: CircularProgressIndicator()),
+  );
+
+  final pago = await ApiService.generarPagoDelMes(contratoId);
+
+  if (context.mounted) Navigator.pop(context); // cierra el loader
+
+  if (!context.mounted) return;
+
+  if (pago != null) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MisPagosScreen(usuarioId: usuarioId, esArrendador: false),
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No se pudo generar el pago del mes. Intenta de nuevo.'),
+        backgroundColor: AppColors.naranja,
+      ),
+    );
+  }
+}
 
 class DashboardScreen extends StatefulWidget {
   final RolUsuario rol;
@@ -66,7 +158,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         case 1:
           return ContratosScreen(usuarioId: widget.usuarioId);
         case 2:
-          return const MisPagosScreen();
+          return MisPagosScreen(usuarioId: widget.usuarioId, esArrendador: true);
         case 3:
           return PerfilScreen(usuarioId: widget.usuarioId, rol: widget.rol);
         default:
@@ -83,7 +175,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             usuarioId: widget.usuarioId,
           );
         case 1:
-          return const MisPagosScreen();
+          return MisPagosScreen(usuarioId: widget.usuarioId, esArrendador: false);
         case 2:
           return const Center(child: Text('Historial - Próximamente'));
         case 3:
@@ -116,7 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       backgroundColor: AppColors.blanco,
       elevation: 0,
       automaticallyImplyLeading: false,
-      title: const AlDiaLogo(size: 32, showText: true),
+      title: const AlDiaLogo(size: 34, showText: true, compact: true),
       actions: [
         IconButton(
           icon: const Icon(Icons.notifications_outlined, color: AppColors.azulPrincipal),
@@ -176,6 +268,86 @@ class _DashboardScreenState extends State<DashboardScreen>
 }
 
 // ─────────────────────────────────────────────
+// BANNER DE ENCABEZADO CON FOTO DE FONDO
+// ─────────────────────────────────────────────
+Widget _buildHeaderBanner(String nombre, String rol) {
+  final ahora = DateTime.now();
+  final diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+  final fechaTexto = '${diasSemana[ahora.weekday - 1]}, ${ahora.day} de ${_mesesNombres[ahora.month - 1]} de ${ahora.year}';
+
+  return ClipRRect(
+    borderRadius: const BorderRadius.only(
+      bottomLeft: Radius.circular(32),
+      bottomRight: Radius.circular(32),
+    ),
+    child: SizedBox(
+      width: double.infinity,
+      height: 188,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/images/login_background.jpg',
+            fit: BoxFit.cover,
+          ),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0x991A3A5C),
+                  Color(0xE60B1B2B),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '¡Hola, $nombre! 👋',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    fontFamily: 'Nunito',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  rol,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.white70,
+                    fontFamily: 'Nunito',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  fechaTexto,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontFamily: 'Nunito',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────
 // DASHBOARD ARRENDADOR
 // ─────────────────────────────────────────────
 class _DashboardArrendador extends StatefulWidget {
@@ -204,12 +376,6 @@ class _DashboardArrendadorState extends State<_DashboardArrendador> {
       _contratos = contratos ?? [];
       _cargando = false;
     });
-  }
-
-  int _calcularDias(String? fechaFin) {
-    if (fechaFin == null) return 9999;
-    final fecha = DateTime.parse(fechaFin);
-    return fecha.difference(DateTime.now()).inDays;
   }
 
   // ── BOTTOM SHEET NUEVO INMUEBLE ──────────────────────────────
@@ -424,60 +590,71 @@ class _DashboardArrendadorState extends State<_DashboardArrendador> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSaludo(widget.nombreUsuario, 'Arrendador'),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(child: _TarjetaResumen(icono: Icons.home_work_rounded, titulo: 'Contratos', valor: '${_contratos.length}', color: AppColors.azulPrincipal)),
-              const SizedBox(width: 12),
-              Expanded(child: _TarjetaResumen(icono: Icons.check_circle_rounded, titulo: 'Activos', valor: '${_contratos.where((c) => c['estado'] == 'ACTIVO').length}', color: AppColors.esmeralda)),
-            ],
-          ),
-          const SizedBox(height: 28),
-          _buildSeccionTitulo('Acciones rápidas'),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _AccionRapida(icono: Icons.add_home_rounded, label: 'Nuevo\ninmueble', color: AppColors.azulPrincipal, onTap: () => _mostrarFormularioInmueble(context)),
-            _AccionRapida(icono: Icons.person_add_alt_1_rounded, label: 'Agregar\ninquilino', color: AppColors.esmeralda, onTap: () => _mostrarFormularioInquilino(context)),
-            _AccionRapida(icono: Icons.notifications_active_rounded, label: 'Enviar\navisos', color: AppColors.naranja, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EnviarAvisoScreen()))),
-            _AccionRapida(icono: Icons.description_rounded,
-            label: 'Generar\ncontrato',
-            color: AppColors.azulMedio,
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ContratoScreen())),
-            ),
-            ],
-          ),
-          const SizedBox(height: 28),
-          _buildSeccionTitulo('Próximos vencimientos'),
-          const SizedBox(height: 14),
-          _cargando
-              ? const Center(child: CircularProgressIndicator())
-              : _contratos.isEmpty
-                  ? const Center(child: Text('No hay contratos registrados', style: TextStyle(color: AppColors.grisMedio, fontFamily: 'Nunito')))
-                  : Column(
-                      children: _contratos.map((contrato) {
-                        final dias = _calcularDias(contrato['fechaFin']);
-                        final estado = contrato['estado'] ?? 'ACTIVO';
-                        final color = dias <= 30 ? AppColors.naranja : AppColors.esmeralda;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _TarjetaVencimiento(
-                            inquilino: 'Arrendatario #${contrato['arrendatarioId']}',
-                            inmueble: 'Inmueble #${contrato['inmuebleId']}',
-                            fechaVencimiento: contrato['fechaFin'] ?? 'Indefinido',
-                            estado: dias == 9999 ? estado : '$dias días restantes',
-                            colorEstado: color,
-                          ),
-                        );
-                      }).toList(),
+          _buildHeaderBanner(widget.nombreUsuario, 'Arrendador'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(child: _TarjetaResumen(icono: Icons.home_work_rounded, titulo: 'Contratos', valor: '${_contratos.length}', color: AppColors.azulPrincipal)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _TarjetaResumen(icono: Icons.check_circle_rounded, titulo: 'Activos', valor: '${_contratos.where((c) => c['estado'] == 'ACTIVO').length}', color: AppColors.esmeralda)),
+                  ],
+                ),
+                const SizedBox(height: 28),
+                _buildSeccionTitulo('Acciones rápidas'),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _AccionRapida(icono: Icons.add_home_rounded, label: 'Nuevo\ninmueble', color: AppColors.azulPrincipal, onTap: () => _mostrarFormularioInmueble(context)),
+                    _AccionRapida(icono: Icons.person_add_alt_1_rounded, label: 'Agregar\ninquilino', color: AppColors.esmeralda, onTap: () => _mostrarFormularioInquilino(context)),
+                    _AccionRapida(icono: Icons.notifications_active_rounded, label: 'Enviar\navisos', color: AppColors.naranja, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EnviarAvisoScreen()))),
+                    _AccionRapida(icono: Icons.description_rounded,
+                    label: 'Generar\ncontrato',
+                    color: AppColors.azulMedio,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ContratoScreen())),
                     ),
-          const SizedBox(height: 24),
+                  ],
+                ),
+                const SizedBox(height: 28),
+                _buildSeccionTitulo('Próximos vencimientos'),
+                const SizedBox(height: 14),
+                _cargando
+                    ? const Center(child: CircularProgressIndicator())
+                    : _contratos.isEmpty
+                        ? const Center(child: Text('No hay contratos registrados', style: TextStyle(color: AppColors.grisMedio, fontFamily: 'Nunito')))
+                        : Column(
+                            children: _contratos.map((contrato) {
+                              final diaPago = contrato['diaPago'] is int
+                                  ? contrato['diaPago'] as int
+                                  : int.tryParse('${contrato['diaPago']}') ?? 1;
+                              final proximaFecha = _proximaFechaPago(diaPago);
+                              final dias = _diasHasta(proximaFecha);
+                              final color = dias <= 5 ? AppColors.naranja : AppColors.esmeralda;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _TarjetaVencimiento(
+                                  inquilino: 'Arrendatario #${contrato['arrendatarioId']}',
+                                  inmueble: 'Inmueble #${contrato['inmuebleId']}',
+                                  fechaVencimiento: _formatearFecha(proximaFecha),
+                                  estado: '$dias días restantes',
+                                  colorEstado: color,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -515,47 +692,75 @@ class _DashboardArrendatarioState extends State<_DashboardArrendatario> {
     });
   }
 
-  int _calcularDias(String? fechaFin) {
-    if (fechaFin == null) return 9999;
-    final fecha = DateTime.parse(fechaFin);
-    return fecha.difference(DateTime.now()).inDays;
-  }
-
   @override
   Widget build(BuildContext context) {
     final contrato = _contratos.isNotEmpty ? _contratos.first : null;
-    final dias = contrato != null ? _calcularDias(contrato['fechaFin']) : 0;
-    final valor = contrato != null ? '\$${contrato['valorMensual']}' : '\$0';
+
+    // El vencimiento se calcula sobre el próximo pago mensual (diaPago),
+    // no sobre la fecha de fin del contrato (que suele ser indefinida).
+    DateTime? proximaFecha;
+    int dias = 0;
+    int? contratoId;
+    if (contrato != null) {
+      final diaPago = contrato['diaPago'] is int
+          ? contrato['diaPago'] as int
+          : int.tryParse('${contrato['diaPago']}') ?? 1;
+      proximaFecha = _proximaFechaPago(diaPago);
+      dias = _diasHasta(proximaFecha);
+      contratoId = contrato['id'] is int
+          ? contrato['id'] as int
+          : int.tryParse('${contrato['id']}');
+    }
+    final valor = contrato != null ? _formatearValorArriendo(contrato['valorMensual']) : '\$0';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSaludo(widget.nombreUsuario, 'Arrendatario'),
-          const SizedBox(height: 24),
-          _cargando
-              ? const Center(child: CircularProgressIndicator())
-              : contrato == null
-                  ? const Center(child: Text('No tienes contratos activos', style: TextStyle(color: AppColors.grisMedio, fontFamily: 'Nunito')))
-                  : _TarjetaEstadoPago(
-                      fechaVencimiento: contrato['fechaFin'] ?? 'Indefinido',
-                      valorArriendo: valor,
-                      diasRestantes: dias == 9999 ? 999 : dias,
+          _buildHeaderBanner(widget.nombreUsuario, 'Arrendatario'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                _cargando
+                    ? const Center(child: CircularProgressIndicator())
+                    : contrato == null
+                        ? const Center(child: Text('No tienes contratos activos', style: TextStyle(color: AppColors.grisMedio, fontFamily: 'Nunito')))
+                        : _TarjetaEstadoPago(
+                            fechaVencimiento: _formatearFecha(proximaFecha!),
+                            valorArriendo: valor,
+                            diasRestantes: dias,
+                            usuarioId: widget.usuarioId,
+                            contratoId: contratoId,
+                          ),
+                const SizedBox(height: 24),
+                _buildSeccionTitulo('Acciones rápidas'),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _AccionRapida(
+                      icono: Icons.payment_rounded,
+                      label: 'Registrar\npago',
+                      color: AppColors.esmeralda,
+                      onTap: () => _registrarPagoYNavegar(
+                        context: context,
+                        contratoId: contratoId,
+                        usuarioId: widget.usuarioId,
+                      ),
                     ),
-          const SizedBox(height: 24),
-          _buildSeccionTitulo('Acciones rápidas'),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _AccionRapida(icono: Icons.payment_rounded, label: 'Registrar\npago', color: AppColors.esmeralda, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MisPagosScreen()))),
-              _AccionRapida(icono: Icons.history_rounded, label: 'Ver\nhistorial', color: AppColors.azulPrincipal, onTap: () {}),
-              _AccionRapida(icono: Icons.description_rounded, label: 'Mi\ncontrato', color: AppColors.azulMedio, onTap: () {}),
-              _AccionRapida(icono: Icons.support_agent_rounded, label: 'Contactar\narrendador', color: AppColors.naranja, onTap: () {}),
-            ],
+                    _AccionRapida(icono: Icons.history_rounded, label: 'Ver\nhistorial', color: AppColors.azulPrincipal, onTap: () {}),
+                    _AccionRapida(icono: Icons.description_rounded, label: 'Mi\ncontrato', color: AppColors.azulMedio, onTap: () {}),
+                    _AccionRapida(icono: Icons.support_agent_rounded, label: 'Contactar\narrendador', color: AppColors.naranja, onTap: () {}),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
         ],
       ),
     );
@@ -565,24 +770,6 @@ class _DashboardArrendatarioState extends State<_DashboardArrendatario> {
 // ─────────────────────────────────────────────
 // WIDGETS COMPARTIDOS
 // ─────────────────────────────────────────────
-
-Widget _buildSaludo(String nombre, String rol) {
-  final ahora = DateTime.now();
-  final diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-  final meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  final fechaTexto = '${diasSemana[ahora.weekday - 1]}, ${ahora.day} de ${meses[ahora.month - 1]} de ${ahora.year}';
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('¡Hola, $nombre! 👋', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.azulPrincipal, fontFamily: 'Nunito')),
-      const SizedBox(height: 4),
-      Text(rol, style: const TextStyle(fontSize: 13, color: AppColors.grisMedio, fontFamily: 'Nunito', fontWeight: FontWeight.w600)),
-      const SizedBox(height: 4),
-      Text(fechaTexto, style: const TextStyle(fontSize: 12, color: AppColors.esmeralda, fontFamily: 'Nunito', fontWeight: FontWeight.w600)),
-    ],
-  );
-}
 
 Widget _buildSeccionTitulo(String titulo) {
   return Text(titulo, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.azulPrincipal, fontFamily: 'Nunito'));
@@ -752,8 +939,16 @@ class _TarjetaEstadoPago extends StatelessWidget {
   final String fechaVencimiento;
   final String valorArriendo;
   final int diasRestantes;
+  final int usuarioId;
+  final int? contratoId;
 
-  const _TarjetaEstadoPago({required this.fechaVencimiento, required this.valorArriendo, required this.diasRestantes});
+  const _TarjetaEstadoPago({
+    required this.fechaVencimiento,
+    required this.valorArriendo,
+    required this.diasRestantes,
+    required this.usuarioId,
+    required this.contratoId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -798,7 +993,11 @@ class _TarjetaEstadoPago extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MisPagosScreen())),
+            onPressed: () => _registrarPagoYNavegar(
+              context: context,
+              contratoId: contratoId,
+              usuarioId: usuarioId,
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.esmeralda,
               minimumSize: const Size(double.infinity, 46),

@@ -7,11 +7,12 @@ class UsuarioService {
  static Future<Map<String, dynamic>> registrar({
   required String nombre,
   required String apellido,
-  required String nombreUsuario,  // NUEVO
+  required String nombreUsuario,
   required String correo,
   required String contrasena,
   required String numDocumento,
   required String telefono,
+  required String rol, // NUEVO: 'ARRENDADOR' o 'ARRENDATARIO'
 }) async {
   final response = await http.post(
     Uri.parse(baseUrl),
@@ -19,11 +20,12 @@ class UsuarioService {
     body: jsonEncode({
       'nombre': nombre,
       'apellido': apellido,
-      'nombreUsuario': nombreUsuario,  // NUEVO
+      'nombreUsuario': nombreUsuario,
       'correo': correo,
       'contrasena': contrasena,
       'numDocumento': numDocumento,
       'telefono': telefono,
+      'rol': rol, // NUEVO
     }),
   );
   
