@@ -1,3 +1,22 @@
+<<<<<<< HEAD
+# aldia
+
+A new Flutter project.
+
+## Getting Started
+
+This project is a starting point for a Flutter application.
+
+A few resources to get you started if this is your first Flutter project:
+
+- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
+- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
+=======
 ﻿# AlDía - Sistema de Gestión de Pagos de Arriendo
 
 Proyecto formativo SENA - Ficha 3113988 - ADSO
@@ -91,3 +110,4 @@ Si quieres probar el backend sin el frontend, pueden usar **Bruno** (gratuito, s
 - Este repositorio es **privado**, solo para uso del equipo del proyecto formativo.
 - Ante cualquier duda o error al levantar el proyecto, escribir al grupo antes de la exposición.
 - Evidencia del proyecto verificable en vivo durante la sustentación.
+>>>>>>> 122ea56934fc534177c62700eb38ea9dd9d1ae91
