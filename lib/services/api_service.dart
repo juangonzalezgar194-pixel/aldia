@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
+  static const String serverUrl = 'http://127.0.0.1:8080';
 
   // LOGIN
   static Future<Map<String, dynamic>?> login(String correo, String contrasena) async {
@@ -181,6 +182,52 @@ class ApiService {
     } catch (e) {
       print('Error de conexión: $e');
       return {'exito': false, 'mensaje': 'Error de conexión con el servidor'};
+    }
+  }
+
+  // SUBIR FOTO DE PERFIL
+  static Future<Map<String, dynamic>?> subirFotoPerfil(
+    int usuarioId,
+    List<int> bytes,
+    String nombreArchivo,
+  ) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/usuarios/$usuarioId/foto'),
+      );
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'archivo',
+          bytes,
+          filename: nombreArchivo,
+        ),
+      );
+      final response = await request.send();
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = await response.stream.bytesToString();
+        return jsonDecode(body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error al subir foto de perfil: $e');
+      return null;
+    }
+  }
+
+  // ACTUALIZAR USUARIO
+  static Future<bool> actualizarUsuario(int usuarioId, Map<String, dynamic> datos) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/usuarios/$usuarioId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(datos),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error al actualizar usuario: $e');
+      return false;
     }
   }
 }
