@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class UsuarioService {
-  static const String baseUrl = 'http://127.0.0.1:8080/api/v1/usuarios';
+  static const String baseUrl = 'https://aldia-production-ff3c.up.railway.app/api/v1/usuarios';
 
  static Future<Map<String, dynamic>> registrar({
   required String nombre,

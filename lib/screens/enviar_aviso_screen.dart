@@ -41,7 +41,7 @@ class _EnviarAvisoScreenState extends State<EnviarAvisoScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:8080/api/notificaciones'),
+        Uri.parse('https://aldia-production-ff3c.up.railway.app/api/notificaciones'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'pagoId': _pagoId,

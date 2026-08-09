@@ -30650,7 +30650,7 @@ case 2:return B.G(o.at(-1),r)}})
 return B.I($async$a5E,r)},
 aq6(a,b,c,d,e,f,g,h){var s=0,r=B.J(t.a),q,p,o,n,m,l,k
 var $async$aq6=B.F(function(i,j){if(i===1)return B.G(j,r)
-for(;;)switch(s){case 0:n=B.dF("http://127.0.0.1:8080/api/v1/usuarios",0,null)
+for(;;)switch(s){case 0:n=B.dF("https://aldia-production-ff3c.up.railway.app/api/v1/usuarios",0,null)
 m=t.N
 l=B.a9(["Content-Type","application/json"],m,m)
 s=3
@@ -49114,7 +49114,7 @@ s=p}for(;;)switch(s){case 0:g=m.d
 if(!g.gM().iX()){s=1
 break}m.R(new B.avz(m))
 p=4
-k=B.dF("http://127.0.0.1:8080/api/notificaciones",0,null)
+k=B.dF("https://aldia-production-ff3c.up.railway.app/api/notificaciones",0,null)
 j=t.N
 i=B.a9(["Content-Type","application/json"],j,j)
 s=7
