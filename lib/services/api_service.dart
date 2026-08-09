@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
-  static const String serverUrl = 'http://127.0.0.1:8080';
+  static const String baseUrl = 'https://aldia-production-ff3c.up.railway.app/api/v1';
+  static const String serverUrl = 'https://aldia-production-ff3c.up.railway.app';
 
   // LOGIN
   static Future<Map<String, dynamic>?> login(String correo, String contrasena) async {
