@@ -33,6 +33,12 @@ public class Usuario {
     @Column(length = 20)
     private String telefono;
 
+    // NUEVO: campo que faltaba. La columna ya existía en la base de datos
+    // (varchar(20), NOT NULL, default 'ARRENDATARIO'), pero nunca estaba
+    // mapeada aquí, por lo que nunca se enviaba al frontend en el login.
+    @Column(nullable = false, length = 20)
+    private String rol;
+
     @Column(nullable = false)
     private boolean activo = true;
 
@@ -83,8 +89,14 @@ public class Usuario {
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
 
+    public String getRol() { return rol; }
+    public void setRol(String rol) { this.rol = rol; }
+
     public boolean isActivo() { return activo; }
     public void setActivo(boolean activo) { this.activo = activo; }
+
+    public LocalDateTime getCreadoEn() { return creadoEn; }
+    public void setCreadoEn(LocalDateTime creadoEn) { this.creadoEn = creadoEn; }
 
    public LocalDateTime getActualizadoEn() { return actualizadoEn; }
     public void setActualizadoEn(LocalDateTime actualizadoEn) { this.actualizadoEn = actualizadoEn; }

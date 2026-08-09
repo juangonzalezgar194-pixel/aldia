@@ -82,7 +82,9 @@ public class UsuarioController {
                     respuesta.put("id", u.getId());
                     respuesta.put("nombre", u.getNombre());
                     respuesta.put("correo", u.getCorreo());
-                    respuesta.put("rol", "USER");
+                    // ANTES: respuesta.put("rol", "USER"); <- estaba fijo, por eso
+                    // Flutter nunca recibía ARRENDADOR/ARRENDATARIO real.
+                    respuesta.put("rol", u.getRol());
                     return ResponseEntity.ok(respuesta);
                 })
                 .orElse(ResponseEntity.status(401).build());
