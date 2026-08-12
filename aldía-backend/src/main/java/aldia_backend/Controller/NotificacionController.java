@@ -2,6 +2,7 @@ package com.aldia.aldia_backend.controller;
 
 import com.aldia.aldia_backend.model.Notificacion;
 import com.aldia.aldia_backend.repository.NotificacionRepository;
+import com.aldia.aldia_backend.service.NotificacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,9 @@ public class NotificacionController {
 
     @Autowired
     private NotificacionRepository notificacionRepository;
+
+    @Autowired
+    private NotificacionService notificacionService;
 
     @GetMapping
     public List<Notificacion> listar() {
@@ -46,7 +50,9 @@ public class NotificacionController {
     public Notificacion crear(@RequestBody Notificacion notificacion) {
         System.out.println(">>> Recibido: " + notificacion.getTipo() + " | " + notificacion.getCanal() + " | " + notificacion.getFechaProgramada());
         try {
-            return notificacionRepository.save(notificacion);
+            Notificacion guardada = notificacionRepository.save(notificacion);
+            notificacionService.procesarEnvio(guardada);
+            return guardada;
         } catch (Exception e) {
             System.out.println(">>> ERROR al guardar: " + e.getMessage());
             throw e;

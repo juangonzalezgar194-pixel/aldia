@@ -26,4 +26,13 @@ public class EmailService {
         );
         mailSender.send(mensaje);
     }
+
+    public void enviarNotificacion(String correoDestino, String asunto, String cuerpo) {
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setFrom("juangonzalezgar194@gmail.com");
+        mensaje.setTo(correoDestino);
+        mensaje.setSubject(asunto);
+        mensaje.setText(cuerpo);
+        mailSender.send(mensaje);
+    }
 }
