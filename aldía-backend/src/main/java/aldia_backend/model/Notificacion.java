@@ -70,7 +70,7 @@ public class Notificacion {
     }
 
     public enum EstadoNotificacion {
-        PENDIENTE, ENVIADA, ERROR
+        PENDIENTE, ENVIADA, FALLIDA
     }
 
     @PrePersist
