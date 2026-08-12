@@ -29,7 +29,12 @@ public class NotificacionController {
 
     @GetMapping("/usuario/{id}")
     public List<Notificacion> porUsuario(@PathVariable Long id) {
-        return notificacionRepository.findByUsuarioId(id);
+        return notificacionRepository.findByUsuarioDestinoId(id);
+    }
+
+    @GetMapping("/contrato/{id}")
+    public List<Notificacion> porContrato(@PathVariable Long id) {
+        return notificacionRepository.findByContratoId(id);
     }
 
     @GetMapping("/estado/{estado}")
@@ -38,15 +43,15 @@ public class NotificacionController {
     }
 
     @PostMapping
-public Notificacion crear(@RequestBody Notificacion notificacion) {
-    System.out.println(">>> Recibido: " + notificacion.getTipo() + " | " + notificacion.getFechaProgramada());
-    try {
-        return notificacionRepository.save(notificacion);
-    } catch (Exception e) {
-        System.out.println(">>> ERROR al guardar: " + e.getMessage());
-        throw e;
+    public Notificacion crear(@RequestBody Notificacion notificacion) {
+        System.out.println(">>> Recibido: " + notificacion.getTipo() + " | " + notificacion.getCanal() + " | " + notificacion.getFechaProgramada());
+        try {
+            return notificacionRepository.save(notificacion);
+        } catch (Exception e) {
+            System.out.println(">>> ERROR al guardar: " + e.getMessage());
+            throw e;
+        }
     }
-}
 
     @PutMapping("/{id}")
     public ResponseEntity<Notificacion> actualizar(@PathVariable Long id, @RequestBody Notificacion datos) {

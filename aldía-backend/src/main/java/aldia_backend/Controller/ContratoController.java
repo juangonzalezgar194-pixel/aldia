@@ -1,16 +1,11 @@
 package com.aldia.aldia_backend.controller;
 
 import com.aldia.aldia_backend.model.Contrato;
-import com.aldia.aldia_backend.model.Pago;
 import com.aldia.aldia_backend.repository.ContratoRepository;
-import com.aldia.aldia_backend.repository.PagoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -20,9 +15,6 @@ public class ContratoController {
 
     @Autowired
     private ContratoRepository contratoRepository;
-
-    @Autowired
-    private PagoRepository pagoRepository;
 
     @GetMapping
     public List<Contrato> listar() {
@@ -48,9 +40,7 @@ public class ContratoController {
 
     @PostMapping
     public Contrato crear(@RequestBody Contrato contrato) {
-        Contrato guardado = contratoRepository.save(contrato);
-        generarPagosDelContrato(guardado);
-        return guardado;
+        return contratoRepository.save(contrato);
     }
 
     @PutMapping("/{id}")
@@ -72,45 +62,5 @@ public class ContratoController {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.notFound().build();
-    }
-
-    /**
-     * Genera automáticamente los pagos mensuales del contrato (dinero simulado,
-     * sin conexión a ninguna pasarela real). Si no hay fechaFin, genera 12 meses.
-     */
-    private void generarPagosDelContrato(Contrato contrato) {
-        // Evita duplicar pagos si el contrato ya los tiene generados
-        if (!pagoRepository.findByContratoId(contrato.getId()).isEmpty()) {
-            return;
-        }
-
-        LocalDate inicio = contrato.getFechaInicio();
-        LocalDate fin = contrato.getFechaFin() != null
-                ? contrato.getFechaFin()
-                : inicio.plusMonths(12);
-
-        int diaPago = contrato.getDiaPago() != null ? contrato.getDiaPago() : 5;
-
-        YearMonth mesActual = YearMonth.from(inicio);
-        YearMonth mesFin = YearMonth.from(fin);
-
-        List<Pago> pagosGenerados = new ArrayList<>();
-
-        while (!mesActual.isAfter(mesFin)) {
-            Pago pago = new Pago();
-            pago.setContratoId(contrato.getId());
-            pago.setPeriodo(mesActual.atDay(1));
-
-            int ultimoDia = mesActual.lengthOfMonth();
-            int dia = Math.min(diaPago, ultimoDia);
-            pago.setFechaLimite(mesActual.atDay(dia));
-
-            pago.setEstado(Pago.EstadoPago.PENDIENTE);
-            pagosGenerados.add(pago);
-
-            mesActual = mesActual.plusMonths(1);
-        }
-
-        pagoRepository.saveAll(pagosGenerados);
     }
 }
