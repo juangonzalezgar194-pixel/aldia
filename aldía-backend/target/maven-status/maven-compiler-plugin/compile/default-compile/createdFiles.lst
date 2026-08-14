@@ -8,7 +8,6 @@ com\aldia\aldia_backend\model\UsuarioRol.class
 com\aldia\soap\ListarInmueblesRequest.class
 com\aldia\aldia_backend\model\Documento.class
 com\aldia\aldia_backend\model\Notificacion.class
-com\aldia\aldia_backend\model\Pago$EstadoPago.class
 com\aldia\aldia_backend\repository\DocumentoRepository.class
 com\aldia\aldia_backend\repository\ContratoRepository.class
 com\aldia\soap\ListarInmueblesResponse.class
@@ -16,8 +15,8 @@ com\aldia\aldia_backend\model\Usuario.class
 com\aldia\aldia_backend\model\Contrato.class
 com\aldia\aldia_backend\controller\RolController.class
 com\aldia\aldia_backend\controller\ContratoController.class
+com\aldia\aldia_backend\model\Notificacion$OrigenNotificacion.class
 com\aldia\aldia_backend\service\EmailService.class
-com\aldia\aldia_backend\controller\PagoController.class
 com\aldia\aldia_backend\config\SoapConfig.class
 com\aldia\aldia_backend\model\Notificacion$CanalNotificacion.class
 com\aldia\aldia_backend\repository\UsuarioRepository.class
@@ -26,9 +25,10 @@ com\aldia\aldia_backend\repository\InmuebleRepository.class
 com\aldia\aldia_backend\repository\ReporteRepository.class
 com\aldia\aldia_backend\controller\NotificacionController.class
 com\aldia\aldia_backend\controller\ReporteController.class
-com\aldia\aldia_backend\model\Pago$MetodoPago.class
+com\aldia\aldia_backend\service\NotificacionService$1.class
 com\aldia\aldia_backend\controller\DocumentoController.class
 com\aldia\aldia_backend\model\Inmueble$TipoInmueble.class
+com\aldia\aldia_backend\service\NotificacionService.class
 com\aldia\aldia_backend\security\JwtUtil.class
 com\aldia\aldia_backend\model\Inmueble.class
 com\aldia\aldia_backend\model\Contrato$EstadoContrato.class
@@ -40,7 +40,6 @@ com\aldia\aldia_backend\security\SecurityConfig.class
 com\aldia\aldia_backend\soap\AldiaEndpoint.class
 com\aldia\soap\ConsultarContratoResponse.class
 com\aldia\aldia_backend\controller\InmuebleController.class
-com\aldia\aldia_backend\repository\PagoRepository.class
 com\aldia\aldia_backend\controller\UsuarioController.class
 com\aldia\aldia_backend\repository\NotificacionRepository.class
 com\aldia\soap\ConsultarInmuebleResponse.class
@@ -52,7 +51,6 @@ com\aldia\aldia_backend\model\Reporte.class
 com\aldia\aldia_backend\repository\TokenJwtRepository.class
 com\aldia\soap\ConsultarContratoRequest.class
 com\aldia\aldia_backend\controller\UsuarioRolController.class
-com\aldia\aldia_backend\model\Pago.class
 com\aldia\aldia_backend\model\UsuarioRol$UsuarioRolId.class
 com\aldia\aldia_backend\security\JwtFilter.class
 com\aldia\soap\package-info.class
