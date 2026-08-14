@@ -7,6 +7,7 @@ import 'package:aldia/screens/perfil_screen.dart';
 import 'package:aldia/screens/contratos_screen.dart';
 import 'package:aldia/screens/enviar_aviso_screen.dart';
 import 'package:aldia/screens/comprobantes_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum RolUsuario { arrendador, arrendatario }
 
@@ -27,8 +28,6 @@ DateTime _proximaFechaPago(int diaPago) {
   DateTime candidato = DateTime(ahora.year, ahora.month, diaPago);
 
   if (!candidato.isAfter(hoySinHora)) {
-    // Ya pasó (o es hoy) el día de pago de este mes: pasamos al siguiente mes.
-    // DateTime normaliza automáticamente si month = 13 -> enero del año siguiente.
     candidato = DateTime(ahora.year, ahora.month + 1, diaPago);
   }
   return candidato;
@@ -609,6 +608,7 @@ class _DashboardArrendatario extends StatefulWidget {
 
 class _DashboardArrendatarioState extends State<_DashboardArrendatario> {
   List<dynamic> _contratos = [];
+  bool _cargandoArrendador = false;
 
   @override
   void initState() {
@@ -621,6 +621,175 @@ class _DashboardArrendatarioState extends State<_DashboardArrendatario> {
     setState(() {
       _contratos = contratos ?? [];
     });
+  }
+
+  // ── CONTACTAR ARRENDADOR ──────────────────────────────
+  Future<void> _contactarArrendador(BuildContext context) async {
+    if (_contratos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Todavía no tienes un contrato asignado.')),
+      );
+      return;
+    }
+
+    final arrendadorId = _contratos.first['arrendadorId'];
+    if (arrendadorId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se encontró el arrendador de tu contrato.')),
+      );
+      return;
+    }
+
+    setState(() => _cargandoArrendador = true);
+    final arrendador = await ApiService.obtenerUsuarioPorId(
+      arrendadorId is int ? arrendadorId : int.tryParse('$arrendadorId') ?? 0,
+    );
+    setState(() => _cargandoArrendador = false);
+
+    if (arrendador == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo obtener la información del arrendador.')),
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+    _mostrarOpcionesContacto(context, arrendador);
+  }
+
+  void _mostrarOpcionesContacto(BuildContext context, Map<String, dynamic> arrendador) {
+    final nombre = '${arrendador['nombre'] ?? ''} ${arrendador['apellido'] ?? ''}'.trim();
+    final telefono = (arrendador['telefono'] ?? '').toString().trim();
+    final correo = (arrendador['correo'] ?? '').toString().trim();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: const Color(0xFFDDE3EC), borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(color: AppColors.naranja.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    child: const Icon(Icons.support_agent_rounded, color: AppColors.naranja, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Contactar arrendador', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.azulPrincipal, fontFamily: 'Nunito')),
+                        if (nombre.isNotEmpty)
+                          Text(nombre, style: const TextStyle(fontSize: 13, color: AppColors.grisMedio, fontFamily: 'Nunito')),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (telefono.isNotEmpty) ...[
+                _OpcionContacto(
+                  icono: Icons.chat_rounded,
+                  color: const Color(0xFF25D366),
+                  titulo: 'WhatsApp',
+                  subtitulo: telefono,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _abrirWhatsApp(context, telefono);
+                  },
+                ),
+                const SizedBox(height: 10),
+                _OpcionContacto(
+                  icono: Icons.phone_rounded,
+                  color: AppColors.esmeralda,
+                  titulo: 'Llamar',
+                  subtitulo: telefono,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _abrirLlamada(context, telefono);
+                  },
+                ),
+                const SizedBox(height: 10),
+              ],
+              if (correo.isNotEmpty)
+                _OpcionContacto(
+                  icono: Icons.email_rounded,
+                  color: AppColors.azulPrincipal,
+                  titulo: 'Correo',
+                  subtitulo: correo,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _abrirCorreo(context, correo, nombre);
+                  },
+                ),
+              if (telefono.isEmpty && correo.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    'El arrendador no tiene datos de contacto registrados.',
+                    style: TextStyle(color: AppColors.grisMedio, fontFamily: 'Nunito'),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _abrirWhatsApp(BuildContext context, String telefono) async {
+    final numeroLimpio = telefono.replaceAll(RegExp(r'[^0-9]'), '');
+    // Si el número no incluye código de país, se asume Colombia (+57)
+    final numeroConCodigo = numeroLimpio.startsWith('57') ? numeroLimpio : '57$numeroLimpio';
+    final uri = Uri.parse('https://wa.me/$numeroConCodigo');
+    final abierto = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!abierto && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir WhatsApp.')),
+      );
+    }
+  }
+
+  Future<void> _abrirLlamada(BuildContext context, String telefono) async {
+    final uri = Uri.parse('tel:$telefono');
+    final abierto = await launchUrl(uri);
+    if (!abierto && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo iniciar la llamada.')),
+      );
+    }
+  }
+
+  Future<void> _abrirCorreo(BuildContext context, String correo, String nombre) async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: correo,
+      query: 'subject=${Uri.encodeComponent('Contacto desde AlDía')}',
+    );
+    final abierto = await launchUrl(uri);
+    if (!abierto && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir la app de correo.')),
+      );
+    }
   }
 
   @override
@@ -643,7 +812,15 @@ class _DashboardArrendatarioState extends State<_DashboardArrendatario> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _AccionRapida(icono: Icons.description_rounded, label: 'Mi\ncontrato', color: AppColors.azulMedio, onTap: () {}),
-                    _AccionRapida(icono: Icons.support_agent_rounded, label: 'Contactar\narrendador', color: AppColors.naranja, onTap: () {}),
+                    _AccionRapida(
+                      icono: Icons.support_agent_rounded,
+                      label: 'Contactar\narrendador',
+                      color: AppColors.naranja,
+                      onTap: () {
+                        if (_cargandoArrendador) return;
+                        _contactarArrendador(context);
+                      },
+                    ),
                     _AccionRapida(
                       icono: Icons.receipt_long_rounded,
                       label: 'Comprobantes',
@@ -826,6 +1003,57 @@ class _AccionRapidaState extends State<_AccionRapida> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OpcionContacto extends StatelessWidget {
+  final IconData icono;
+  final Color color;
+  final String titulo;
+  final String subtitulo;
+  final VoidCallback onTap;
+
+  const _OpcionContacto({
+    required this.icono,
+    required this.color,
+    required this.titulo,
+    required this.subtitulo,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.grisClaro,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icono, color: color, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(titulo, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.azulPrincipal, fontFamily: 'Nunito')),
+                  Text(subtitulo, style: const TextStyle(fontSize: 12, color: AppColors.grisMedio, fontFamily: 'Nunito')),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.grisMedio),
+          ],
         ),
       ),
     );

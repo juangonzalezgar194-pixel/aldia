@@ -19,7 +19,7 @@ class _EnviarAvisoScreenState extends State<EnviarAvisoScreen> {
 
   // ID de usuario temporal hasta conectar login
   final int _usuarioId = 1;
-  final int _pagoId = 1;
+  final int _contratoId = 1;
 
   final List<Map<String, String>> _tipos = [
     {'label': 'Recordatorio 3 días', 'value': 'RECORDATORIO_3_DIAS'},
@@ -41,14 +41,16 @@ class _EnviarAvisoScreenState extends State<EnviarAvisoScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://aldia-production-ff3c.up.railway.app/api/notificaciones'),
+        Uri.parse('https://aldia-production-ff3c.up.railway.app/api/v1/notificaciones'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'pagoId': _pagoId,
-          'usuarioId': _usuarioId,
+          'contratoId': _contratoId,
+          'usuarioDestinoId': _usuarioId,
           'tipo': _tipoSeleccionado,
           'canal': _canalSeleccionado,
           'estado': 'PENDIENTE',
+          'origen': 'MANUAL',
+          'mensaje': _mensajeController.text,
           'fechaProgramada': DateTime.now().toIso8601String().substring(0, 19),
         }),
       );
@@ -66,8 +68,12 @@ class _EnviarAvisoScreenState extends State<EnviarAvisoScreen> {
           _canalSeleccionado = null;
         });
       } else {
+        // ignore: avoid_print
+        print('STATUS: ${response.statusCode}');
+        // ignore: avoid_print
+        print('BODY: ${response.body}');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${response.statusCode}')),
+          SnackBar(content: Text('Error ${response.statusCode}: ${response.body}')),
         );
       }
     } catch (e) {
@@ -137,6 +143,19 @@ class _EnviarAvisoScreenState extends State<EnviarAvisoScreen> {
                   border: OutlineInputBorder(),
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text('Mensaje (opcional)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _mensajeController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Escribe un mensaje personalizado...',
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               ),
               const SizedBox(height: 30),
