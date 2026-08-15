@@ -61,9 +61,10 @@ public class Notificacion {
     }
 
     public enum TipoNotificacion {
-        RECORDATORIO_3_DIAS, RECORDATORIO_1_DIA, VENCIMIENTO, MORA,
-        PAGO_PROXIMO, PAGO_VENCIDO
-    }
+    RECORDATORIO_3_DIAS, RECORDATORIO_1_DIA, VENCIMIENTO, MORA,
+    PAGO_PROXIMO, PAGO_VENCIDO,
+    CONFIRMACION_PAGO_EFECTIVO, PAGO_REGISTRADO
+}
 
     public enum CanalNotificacion {
         EMAIL, PUSH, WHATSAPP

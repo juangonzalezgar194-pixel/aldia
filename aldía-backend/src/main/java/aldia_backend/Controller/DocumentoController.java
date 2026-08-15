@@ -1,7 +1,12 @@
 package com.aldia.aldia_backend.controller;
 
+import com.aldia.aldia_backend.model.Contrato;
+import com.aldia.aldia_backend.model.ConfirmacionPago;
 import com.aldia.aldia_backend.model.Documento;
+import com.aldia.aldia_backend.repository.ContratoRepository;
+import com.aldia.aldia_backend.repository.ConfirmacionPagoRepository;
 import com.aldia.aldia_backend.repository.DocumentoRepository;
+import com.aldia.aldia_backend.util.PeriodoPagoUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +17,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/documentos")
@@ -21,6 +28,12 @@ public class DocumentoController {
 
     @Autowired
     private DocumentoRepository documentoRepository;
+
+    @Autowired
+    private ContratoRepository contratoRepository;
+
+    @Autowired
+    private ConfirmacionPagoRepository confirmacionPagoRepository;
 
     private final String UPLOAD_DIR = "uploads/";
 
@@ -48,10 +61,28 @@ public class DocumentoController {
 
             documentoRepository.save(doc);
 
+            // Registrar la confirmación de pago asociada a este comprobante
+            registrarConfirmacionPorComprobante(contratoId, doc.getId());
+
             return ResponseEntity.ok(doc);
         } catch (IOException e) {
             return ResponseEntity.status(500).body("Error al subir el archivo: " + e.getMessage());
         }
+    }
+
+    private void registrarConfirmacionPorComprobante(Long contratoId, Long documentoId) {
+        Optional<Contrato> contratoOpt = contratoRepository.findById(contratoId);
+        if (contratoOpt.isEmpty()) return; // si no existe el contrato, no bloqueamos la subida del archivo
+
+        Contrato contrato = contratoOpt.get();
+        LocalDate periodo = PeriodoPagoUtil.calcularFechaPagoMesActual(contrato.getDiaPago(), LocalDate.now());
+
+        ConfirmacionPago confirmacion = new ConfirmacionPago();
+        confirmacion.setContratoId(contratoId);
+        confirmacion.setPeriodoPago(periodo);
+        confirmacion.setMetodo(ConfirmacionPago.MetodoConfirmacion.COMPROBANTE);
+        confirmacion.setDocumentoId(documentoId);
+        confirmacionPagoRepository.save(confirmacion);
     }
 
     @GetMapping("/contrato/{contratoId}")

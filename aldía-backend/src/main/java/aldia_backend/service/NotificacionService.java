@@ -52,6 +52,14 @@ public class NotificacionService {
                 asunto = "AlDía - Pago vencido";
                 cuerpoBase = "Tu pago se encuentra vencido.";
                 break;
+            case CONFIRMACION_PAGO_EFECTIVO:
+                asunto = "AlDía - Pago en efectivo confirmado por tu arrendatario";
+                cuerpoBase = "Tu arrendatario confirmó que realizó el pago en efectivo. Te recomendamos verificarlo directamente con él.";
+                break;
+            case PAGO_REGISTRADO:
+                asunto = "AlDía - Tu confirmación de pago fue registrada";
+                cuerpoBase = "Registramos tu confirmación de pago en efectivo. Gracias por mantenerte al día.";
+                break;
             default:
                 asunto = "AlDía - Notificación";
                 cuerpoBase = "Tienes una nueva notificación.";
@@ -65,6 +73,13 @@ public class NotificacionService {
         cuerpo += "\n\nEquipo AlDía";
 
         return new String[]{asunto, cuerpo};
+    }
+
+    // Guarda la notificación y la envía en un solo paso (usado por confirmaciones y el job automático)
+    public Notificacion crearYEnviar(Notificacion notificacion) {
+        Notificacion guardada = notificacionRepository.save(notificacion);
+        procesarEnvio(guardada);
+        return guardada;
     }
 
     // Procesa el envío de una notificación ya guardada, según su canal
