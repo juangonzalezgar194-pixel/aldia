@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'https://aldia-production-ff3c.up.railway.app/api/v1';
-  static const String serverUrl = 'https://aldia-production-ff3c.up.railway.app';
+  static const String baseUrl = 'http://localhost:8080/api/v1';
+static const String serverUrl = 'http://localhost:8080';
 
   // LOGIN
   static Future<Map<String, dynamic>?> login(String correo, String contrasena) async {
@@ -88,6 +88,82 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
       );
       if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error de conexión: $e');
+      return null;
+    }
+  }
+
+  // OBTENER INMUEBLES POR PROPIETARIO (ARRENDADOR) - TODOS, sin filtrar disponibilidad
+  static Future<List<dynamic>?> obtenerInmueblesPorPropietario(int id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/inmuebles/propietario/$id'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error de conexión: $e');
+      return null;
+    }
+  }
+
+  // OBTENER INMUEBLES DISPONIBLES POR PROPIETARIO (para el formulario de Generar Contrato:
+  // solo trae inmuebles activos y sin contrato vigente)
+  static Future<List<dynamic>?> obtenerInmueblesDisponiblesPorPropietario(int id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/inmuebles/propietario/$id/disponibles'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error de conexión: $e');
+      return null;
+    }
+  }
+
+  // OBTENER USUARIOS POR ROL (ej: 'ARRENDATARIO')
+  static Future<List<dynamic>?> obtenerUsuariosPorRol(String rol) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/usuarios/rol/$rol'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error de conexión: $e');
+      return null;
+    }
+  }
+
+  // CREAR CONTRATO
+  static Future<Map<String, dynamic>?> crearContrato(Map<String, dynamic> contrato) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/contratos'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(contrato),
+      );
+      print('STATUS: ${response.statusCode}');
+      print('BODY: ${response.body}');
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
         return null;

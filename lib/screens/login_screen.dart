@@ -6,6 +6,7 @@ import 'package:aldia/screens/registro_screen.dart';
 import 'package:aldia/screens/dashboard_screen.dart';
 import 'package:aldia/services/api_service.dart';
 import 'package:aldia/screens/recuperar_password_screen.dart';
+import 'package:aldia/screens/activar_cuenta_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -282,6 +283,35 @@ class _LoginScreenState extends State<LoginScreen>
                   fontWeight: FontWeight.w600,
                   fontFamily: 'Nunito',
                   color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 36),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ActivarCuentaScreen(),
+                  ),
+                );
+              },
+              child: const Text(
+                '¿Tienes un contrato asignado? Activa tu cuenta',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Nunito',
+                  color: Colors.white70,
                 ),
               ),
             ),

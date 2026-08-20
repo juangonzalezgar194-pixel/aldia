@@ -7,6 +7,7 @@ import 'package:aldia/screens/perfil_screen.dart';
 import 'package:aldia/screens/contratos_screen.dart';
 import 'package:aldia/screens/enviar_aviso_screen.dart';
 import 'package:aldia/screens/comprobantes_screen.dart';
+import 'package:aldia/widgets/banner_publicidad_overlay.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum RolUsuario { arrendador, arrendatario }
@@ -65,6 +66,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
   int _selectedIndex = 0;
+  bool _mostrarBannerPublicidad = true; // ← NUEVO: controla la visibilidad del banner
 
   @override
   void initState() {
@@ -131,9 +133,22 @@ class _DashboardScreenState extends State<DashboardScreen>
       backgroundColor: AppColors.grisClaro,
       appBar: _buildAppBar(),
       bottomNavigationBar: _buildBottomNav(esArrendador),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: SlideTransition(position: _slideAnim, child: _getBody()),
+      body: Stack(
+        children: [
+          FadeTransition(
+            opacity: _fadeAnim,
+            child: SlideTransition(position: _slideAnim, child: _getBody()),
+          ),
+          // ← NUEVO: banner de publicidad flotante, se muestra 5s tras el login
+          if (_mostrarBannerPublicidad)
+            BannerPublicidadOverlay(
+              onCerrar: () {
+                setState(() {
+                  _mostrarBannerPublicidad = false;
+                });
+              },
+            ),
+        ],
       ),
     );
   }
@@ -552,7 +567,10 @@ class _DashboardArrendadorState extends State<_DashboardArrendador> {
                     _AccionRapida(icono: Icons.description_rounded,
                     label: 'Generar\ncontrato',
                     color: AppColors.azulMedio,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ContratoScreen())),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ContratoScreen(
+                    usuarioId: widget.usuarioId,
+                    nombreUsuario: widget.nombreUsuario,
+                    ))),
                     ),
                   ],
                 ),
