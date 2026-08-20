@@ -42,6 +42,11 @@ public class InmuebleController {
         return inmuebleRepository.findByActivoTrueAndDisponibleTrue();
     }
 
+    @GetMapping("/propietario/{id}/disponibles")
+    public List<Inmueble> porPropietarioDisponibles(@PathVariable Long id) {
+        return inmuebleRepository.findByPropietarioIdAndActivoTrueAndDisponibleTrue(id);
+    }
+
     @PostMapping
     public Inmueble crear(@RequestBody Inmueble inmueble) {
         return inmuebleRepository.save(inmueble);
