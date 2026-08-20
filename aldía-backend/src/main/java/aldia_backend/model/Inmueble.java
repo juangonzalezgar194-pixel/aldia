@@ -33,6 +33,9 @@ public class Inmueble {
     @Column(nullable = false)
     private boolean activo = true;
 
+    @Column(nullable = false)
+    private boolean disponible = true;
+
     @Column(name = "creado_en")
     private LocalDateTime creadoEn;
 
@@ -77,6 +80,9 @@ public class Inmueble {
 
     public boolean isActivo() { return activo; }
     public void setActivo(boolean activo) { this.activo = activo; }
+
+    public boolean isDisponible() { return disponible; }
+    public void setDisponible(boolean disponible) { this.disponible = disponible; }
 
     public LocalDateTime getCreadoEn() { return creadoEn; }
     public void setCreadoEn(LocalDateTime creadoEn) { this.creadoEn = creadoEn; }

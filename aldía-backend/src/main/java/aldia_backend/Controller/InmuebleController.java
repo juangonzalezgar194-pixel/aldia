@@ -37,6 +37,11 @@ public class InmuebleController {
         return inmuebleRepository.findByActivoTrue();
     }
 
+    @GetMapping("/disponibles")
+    public List<Inmueble> disponibles() {
+        return inmuebleRepository.findByActivoTrueAndDisponibleTrue();
+    }
+
     @PostMapping
     public Inmueble crear(@RequestBody Inmueble inmueble) {
         return inmuebleRepository.save(inmueble);
@@ -51,6 +56,8 @@ public class InmuebleController {
             inmueble.setTipo(datos.getTipo());
             inmueble.setDescripcion(datos.getDescripcion());
             inmueble.setActivo(datos.isActivo());
+            inmueble.setDisponible(datos.isDisponible());
+            inmueble.setPropietarioId(datos.getPropietarioId());
             return ResponseEntity.ok(inmuebleRepository.save(inmueble));
         }).orElse(ResponseEntity.notFound().build());
     }

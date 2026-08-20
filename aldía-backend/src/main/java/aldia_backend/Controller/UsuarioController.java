@@ -44,6 +44,11 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/rol/{rol}")
+    public List<Usuario> porRol(@PathVariable String rol) {
+        return usuarioRepository.findByRol(rol.toUpperCase());
+    }
+
     @PostMapping
     public ResponseEntity<Usuario> crear(@RequestBody Usuario usuario) {
         usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));
@@ -82,8 +87,6 @@ public class UsuarioController {
                     respuesta.put("id", u.getId());
                     respuesta.put("nombre", u.getNombre());
                     respuesta.put("correo", u.getCorreo());
-                    // ANTES: respuesta.put("rol", "USER"); <- estaba fijo, por eso
-                    // Flutter nunca recibía ARRENDADOR/ARRENDATARIO real.
                     respuesta.put("rol", u.getRol());
                     return ResponseEntity.ok(respuesta);
                 })

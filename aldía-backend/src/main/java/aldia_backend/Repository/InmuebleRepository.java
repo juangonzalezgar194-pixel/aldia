@@ -11,4 +11,5 @@ public interface InmuebleRepository extends JpaRepository<Inmueble, Long> {
     List<Inmueble> findByActivoTrue();
     List<Inmueble> findByTipo(Inmueble.TipoInmueble tipo);
     List<Inmueble> findByCiudad(String ciudad);
+    List<Inmueble> findByActivoTrueAndDisponibleTrue();
 }
