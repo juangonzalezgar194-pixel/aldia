@@ -26,8 +26,8 @@ public class EmailService {
     @Value("${EMAIL_CORREO_PRUEBAS:juangonzalezgar194@gmail.com}")
     private String correoPruebas;
 
-    // Remitente de pruebas de Resend (mientras no verifiquemos un dominio propio)
-    private static final String REMITENTE = "AlDía <onboarding@resend.dev>";
+    // Remitente con dominio propio ya verificado en Resend (api.aldiaapp.org)
+    private static final String REMITENTE = "AlDía <notificaciones@api.aldiaapp.org>";
     private static final String RESEND_URL = "https://api.resend.com/emails";
 
     private final RestTemplate restTemplate = new RestTemplate();
