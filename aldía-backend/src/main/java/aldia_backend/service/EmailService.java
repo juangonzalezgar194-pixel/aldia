@@ -1,5 +1,6 @@
 package com.aldia.aldia_backend.service;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -31,6 +32,29 @@ public class EmailService {
     private static final String RESEND_URL = "https://api.resend.com/emails";
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    /**
+     * Se ejecuta UNA vez, justo al terminar de arrancar este bean, y deja
+     * en los logs de Railway (pestaña Deployments -> View logs, o Console)
+     * una línea clarísima con el valor REAL que el servidor está usando.
+     *
+     * Esto es la fuente de verdad: si aquí dice "true", no importa lo que
+     * diga el panel de Variables de Railway — el proceso que está corriendo
+     * ahora mismo sigue en modo prueba y hay que investigar por qué (variable
+     * mal escrita, servicio equivocado, redeploy que no se aplicó, etc).
+     */
+    @PostConstruct
+    public void logConfiguracionAlArrancar() {
+        System.out.println("=================================================");
+        System.out.println("🔧 EmailService iniciado");
+        System.out.println("🔧 EMAIL_MODO_PRUEBA (valor real usado) = " + modoPrueba);
+        if (modoPrueba) {
+            System.out.println("🔧 TODOS los correos se están redirigiendo a: " + correoPruebas);
+        } else {
+            System.out.println("🔧 Los correos se envían al destinatario real (modo producción)");
+        }
+        System.out.println("=================================================");
+    }
 
     public void enviarCodigoRecuperacion(String correoDestino, String codigo) {
         String cuerpo =
@@ -66,6 +90,11 @@ public class EmailService {
         String asuntoFinal = asunto;
         String cuerpoFinal = cuerpoTexto;
 
+        // Log por cada envío: así, además del log de arranque, ves en cada
+        // intento exactamente qué decidió el código con este correo puntual.
+        System.out.println("📧 Intentando enviar correo | modoPrueba=" + modoPrueba
+                + " | destinatarioSolicitado=" + correoDestino);
+
         if (modoPrueba) {
             // Redirigimos todo a la casilla de pruebas, pero dejamos claro
             // en el asunto y el cuerpo para quién era el correo originalmente.
@@ -73,6 +102,8 @@ public class EmailService {
             asuntoFinal = "[PRUEBA -> " + correoDestino + "] " + asunto;
             cuerpoFinal = "(Correo de prueba. Destinatario real: " + correoDestino + ")\n\n" + cuerpoTexto;
         }
+
+        System.out.println("📧 Enviando realmente a: " + destinatarioReal);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

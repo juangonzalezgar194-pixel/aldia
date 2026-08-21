@@ -5,7 +5,7 @@
 Este archivo ha sido generado por Eclipse Implementation of JAXB v4.0.5 
 Visite https://eclipse-ee4j.github.io/jaxb-ri 
 Todas las modificaciones realizadas en este archivo se perderán si se vuelve a compilar el esquema de origen. 
-Generado el: 2026.08.07 a las 09:16:18 PM COT
+Generado el: 2026.08.19 a las 03:14:12 PM COT
   -->
   <bindings scd="x-schema::tns" if-exists="true" auto-acknowledge="true" xmlns:tns="http://aldia.com/soap">
     <schemaBindings map="false">

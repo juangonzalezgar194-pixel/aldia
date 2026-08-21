@@ -2,10 +2,14 @@ com\aldia\soap\InmuebleItem.class
 com\aldia\aldia_backend\model\Notificacion$TipoNotificacion.class
 com\aldia\aldia_backend\CorsConfig$1.class
 com\aldia\aldia_backend\model\Reporte$TipoReporte.class
+com\aldia\aldia_backend\util\PeriodoPagoUtil.class
 com\aldia\aldia_backend\repository\RolRepository.class
 com\aldia\aldia_backend\model\TokenJwt.class
+com\aldia\aldia_backend\model\ConfirmacionPago.class
 com\aldia\aldia_backend\model\UsuarioRol.class
 com\aldia\soap\ListarInmueblesRequest.class
+com\aldia\aldia_backend\controller\SchedulerTestController.class
+com\aldia\aldia_backend\controller\ConfirmacionPagoController.class
 com\aldia\aldia_backend\model\Documento.class
 com\aldia\aldia_backend\model\Notificacion.class
 com\aldia\aldia_backend\repository\DocumentoRepository.class
@@ -13,6 +17,7 @@ com\aldia\aldia_backend\repository\ContratoRepository.class
 com\aldia\soap\ListarInmueblesResponse.class
 com\aldia\aldia_backend\model\Usuario.class
 com\aldia\aldia_backend\model\Contrato.class
+com\aldia\aldia_backend\dto\CrearContratoRequest.class
 com\aldia\aldia_backend\controller\RolController.class
 com\aldia\aldia_backend\controller\ContratoController.class
 com\aldia\aldia_backend\model\Notificacion$OrigenNotificacion.class
@@ -29,6 +34,7 @@ com\aldia\aldia_backend\service\NotificacionService$1.class
 com\aldia\aldia_backend\controller\DocumentoController.class
 com\aldia\aldia_backend\model\Inmueble$TipoInmueble.class
 com\aldia\aldia_backend\service\NotificacionService.class
+com\aldia\aldia_backend\model\ConfirmacionPago$MetodoConfirmacion.class
 com\aldia\aldia_backend\security\JwtUtil.class
 com\aldia\aldia_backend\model\Inmueble.class
 com\aldia\aldia_backend\model\Contrato$EstadoContrato.class
@@ -49,8 +55,11 @@ com\aldia\aldia_backend\model\Rol.class
 com\aldia\aldia_backend\controller\ClimaController.class
 com\aldia\aldia_backend\model\Reporte.class
 com\aldia\aldia_backend\repository\TokenJwtRepository.class
+com\aldia\aldia_backend\repository\ConfirmacionPagoRepository.class
 com\aldia\soap\ConsultarContratoRequest.class
 com\aldia\aldia_backend\controller\UsuarioRolController.class
+com\aldia\aldia_backend\scheduler\NotificacionScheduler.class
 com\aldia\aldia_backend\model\UsuarioRol$UsuarioRolId.class
 com\aldia\aldia_backend\security\JwtFilter.class
+com\aldia\aldia_backend\service\ContratoPdfService.class
 com\aldia\soap\package-info.class
