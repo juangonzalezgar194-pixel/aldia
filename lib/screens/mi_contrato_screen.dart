@@ -4,24 +4,30 @@ import 'package:aldia/services/api_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ContratosScreen extends StatefulWidget {
+/// Pantalla "Mi contrato" del lado del ARRENDATARIO.
+///
+/// Es el equivalente a ContratosScreen (arrendador), pero consultando
+/// obtenerContratosPorArrendatario en vez de obtenerContratosPorArrendador.
+/// Comparte exactamente la misma lógica de documentos: como ambos roles
+/// consultan obtenerDocumentosPorContrato(contratoId) sobre el mismo
+/// contrato, cualquier documento subido (o eliminado) por cualquiera de
+/// los dos lados se refleja automáticamente para ambos.
+class MiContratoScreen extends StatefulWidget {
   final int usuarioId;
 
-  const ContratosScreen({
+  const MiContratoScreen({
     super.key,
     required this.usuarioId,
   });
 
   @override
-  State<ContratosScreen> createState() => _ContratosScreenState();
+  State<MiContratoScreen> createState() => _MiContratoScreenState();
 }
 
-class _ContratosScreenState extends State<ContratosScreen> {
+class _MiContratoScreenState extends State<MiContratoScreen> {
   List<dynamic> _contratos = [];
   bool _cargando = true;
 
-  // Documentos ya subidos, indexados por contratoId, para no tener que
-  // recargar todo el listado de contratos cada vez que se sube uno nuevo.
   final Map<int, List<dynamic>> _documentosPorContrato = {};
   final Map<int, bool> _cargandoDocumentos = {};
   final Map<int, bool> _subiendo = {};
@@ -34,13 +40,12 @@ class _ContratosScreenState extends State<ContratosScreen> {
   }
 
   Future<void> _cargarContratos() async {
-    final contratos = await ApiService.obtenerContratosPorArrendador(widget.usuarioId);
+    final contratos = await ApiService.obtenerContratosPorArrendatario(widget.usuarioId);
     setState(() {
       _contratos = contratos ?? [];
       _cargando = false;
     });
 
-    // Una vez tenemos los contratos, pedimos los documentos de cada uno.
     for (final contrato in _contratos) {
       final contratoId = contrato['id'] ?? 0;
       _cargarDocumentos(contratoId);
@@ -91,7 +96,6 @@ class _ContratosScreenState extends State<ContratosScreen> {
       ),
     );
 
-    // Refrescamos SOLO los documentos de este contrato, no toda la pantalla.
     if (exito) {
       await _cargarDocumentos(contratoId);
     }
@@ -160,10 +164,7 @@ class _ContratosScreenState extends State<ContratosScreen> {
     final urlRelativa = doc['url'] ?? '';
     if (urlRelativa.isEmpty) return;
 
-    // El backend guarda una ruta relativa (ej: "uploads/123_recibo.pdf").
-    // La combinamos con la URL base del servidor para armar el link real.
     final urlCompleta = '${ApiService.serverUrl}/$urlRelativa';
-
     final uri = Uri.parse(urlCompleta);
     final abierto = await launchUrl(uri, mode: LaunchMode.externalApplication);
 
@@ -186,42 +187,43 @@ class _ContratosScreenState extends State<ContratosScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Mis Contratos',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: AppColors.azulPrincipal,
-              fontFamily: 'Nunito',
-            ),
+    return Scaffold(
+      backgroundColor: AppColors.grisClaro,
+      appBar: AppBar(
+        backgroundColor: AppColors.blanco,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: AppColors.azulPrincipal, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Mi contrato',
+          style: TextStyle(
+            color: AppColors.azulPrincipal,
+            fontFamily: 'Nunito',
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Gestiona y sube documentos de tus contratos',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.grisMedio,
-              fontFamily: 'Nunito',
-            ),
-          ),
-          const SizedBox(height: 24),
-          _cargando
-              ? const Center(child: CircularProgressIndicator())
-              : _contratos.isEmpty
-                  ? Center(
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: _cargando
+            ? const Center(child: CircularProgressIndicator())
+            : _contratos.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(height: 40),
                           Icon(Icons.home_work_outlined,
                               size: 64, color: AppColors.grisMedio),
                           const SizedBox(height: 16),
                           const Text(
-                            'No hay contratos registrados',
+                            'Todavía no tienes un contrato asignado',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               color: AppColors.grisMedio,
                               fontFamily: 'Nunito',
@@ -231,8 +233,11 @@ class _ContratosScreenState extends State<ContratosScreen> {
                           ),
                         ],
                       ),
-                    )
-                  : Column(
+                    ),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    child: Column(
                       children: _contratos.map((contrato) {
                         final contratoId = contrato['id'] ?? 0;
                         final dias = contrato['fechaFin'] != null
@@ -356,7 +361,6 @@ class _ContratosScreenState extends State<ContratosScreen> {
                                 ),
                                 const SizedBox(height: 14),
 
-                                // --- Lista de documentos ya subidos ---
                                 if (cargandoDocs)
                                   const Padding(
                                     padding: EdgeInsets.symmetric(vertical: 8),
@@ -370,7 +374,7 @@ class _ContratosScreenState extends State<ContratosScreen> {
                                   )
                                 else if (documentos.isNotEmpty) ...[
                                   const Text(
-                                    'Documentos subidos',
+                                    'Documentos del contrato',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
@@ -455,7 +459,18 @@ class _ContratosScreenState extends State<ContratosScreen> {
                                     );
                                   }),
                                   const SizedBox(height: 6),
-                                ],
+                                ] else
+                                  const Padding(
+                                    padding: EdgeInsets.only(bottom: 10),
+                                    child: Text(
+                                      'Todavía no hay documentos en este contrato.',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.grisMedio,
+                                        fontFamily: 'Nunito',
+                                      ),
+                                    ),
+                                  ),
 
                                 ElevatedButton.icon(
                                   onPressed: subiendoEste
@@ -493,7 +508,7 @@ class _ContratosScreenState extends State<ContratosScreen> {
                         );
                       }).toList(),
                     ),
-        ],
+                  ),
       ),
     );
   }

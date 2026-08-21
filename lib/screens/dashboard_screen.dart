@@ -7,6 +7,7 @@ import 'package:aldia/screens/perfil_screen.dart';
 import 'package:aldia/screens/contratos_screen.dart';
 import 'package:aldia/screens/enviar_aviso_screen.dart';
 import 'package:aldia/screens/comprobantes_screen.dart';
+import 'package:aldia/screens/mi_contrato_screen.dart';
 import 'package:aldia/widgets/banner_publicidad_overlay.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -829,7 +830,17 @@ class _DashboardArrendatarioState extends State<_DashboardArrendatario> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _AccionRapida(icono: Icons.description_rounded, label: 'Mi\ncontrato', color: AppColors.azulMedio, onTap: () {}),
+                    _AccionRapida(
+                      icono: Icons.description_rounded,
+                      label: 'Mi\ncontrato',
+                      color: AppColors.azulMedio,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MiContratoScreen(usuarioId: widget.usuarioId),
+                        ),
+                      ),
+                    ),
                     _AccionRapida(
                       icono: Icons.support_agent_rounded,
                       label: 'Contactar\narrendador',

@@ -7,6 +7,7 @@ import 'package:aldia/screens/dashboard_screen.dart';
 import 'package:aldia/services/api_service.dart';
 import 'package:aldia/screens/recuperar_password_screen.dart';
 import 'package:aldia/screens/activar_cuenta_screen.dart';
+import 'package:aldia/screens/terminos_condiciones_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -143,6 +144,32 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                   const SizedBox(height: 16),
                 ],
+              ),
+            ),
+          ),
+
+          // Botón de Términos y Condiciones (esquina superior derecha)
+          // NOTA: se movió al FINAL del Stack (antes estaba antes del
+          // SafeArea del contenido). Al ser el último hijo, queda por
+          // encima visual y táctilmente, así el SingleChildScrollView
+          // ya no le roba el toque.
+          //
+          // Ahora usa _TerminosCondicionesButton: una cajita tipo "glass"
+          // (fondo translúcido + borde) con efecto hover, consistente
+          // con el resto del diseño del login.
+          Positioned(
+            top: 16,
+            right: 16,
+            child: SafeArea(
+              child: _TerminosCondicionesButton(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TerminosCondicionesScreen(),
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -441,6 +468,64 @@ class _LoginScreenState extends State<LoginScreen>
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Colors.redAccent),
+        ),
+      ),
+    );
+  }
+}
+
+/// Botón "Términos y Condiciones" con caja tipo glass y efecto hover,
+/// consistente con el resto del login (blur + borde translúcido).
+class _TerminosCondicionesButton extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const _TerminosCondicionesButton({required this.onTap});
+
+  @override
+  State<_TerminosCondicionesButton> createState() =>
+      _TerminosCondicionesButtonState();
+}
+
+class _TerminosCondicionesButtonState
+    extends State<_TerminosCondicionesButton> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: _hovering
+                ? Colors.white.withOpacity(0.22)
+                : Colors.white.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _hovering
+                  ? Colors.white.withOpacity(0.6)
+                  : Colors.white.withOpacity(0.25),
+              width: 1.2,
+            ),
+          ),
+          child: Text(
+            'Términos y Condiciones',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Nunito',
+              decoration: _hovering
+                  ? TextDecoration.none
+                  : TextDecoration.underline,
+            ),
+          ),
         ),
       ),
     );

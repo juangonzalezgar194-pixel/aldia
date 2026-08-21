@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080/api/v1';
-static const String serverUrl = 'http://localhost:8080';
-
+static const String baseUrl = 'https://api.aldiaapp.org/api/v1';
+static const String serverUrl = 'https://api.aldiaapp.org';
   // LOGIN
   static Future<Map<String, dynamic>?> login(String correo, String contrasena) async {
     try {
@@ -212,6 +211,20 @@ static const String serverUrl = 'http://localhost:8080';
     } catch (e) {
       print('Error de conexión: $e');
       return null;
+    }
+  }
+
+  // ELIMINAR DOCUMENTO (ej: uno subido por error)
+  static Future<bool> eliminarDocumento(int documentoId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/documentos/$documentoId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error al eliminar documento: $e');
+      return false;
     }
   }
 
