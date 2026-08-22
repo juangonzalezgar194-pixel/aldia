@@ -32,6 +32,7 @@ com\aldia\aldia_backend\controller\NotificacionController.class
 com\aldia\aldia_backend\controller\ReporteController.class
 com\aldia\aldia_backend\service\NotificacionService$1.class
 com\aldia\aldia_backend\controller\DocumentoController.class
+com\aldia\aldia_backend\config\WebConfig.class
 com\aldia\aldia_backend\model\Inmueble$TipoInmueble.class
 com\aldia\aldia_backend\service\NotificacionService.class
 com\aldia\aldia_backend\model\ConfirmacionPago$MetodoConfirmacion.class
