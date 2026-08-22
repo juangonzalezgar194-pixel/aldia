@@ -20,8 +20,6 @@ class _ContratosScreenState extends State<ContratosScreen> {
   List<dynamic> _contratos = [];
   bool _cargando = true;
 
-  // Documentos ya subidos, indexados por contratoId, para no tener que
-  // recargar todo el listado de contratos cada vez que se sube uno nuevo.
   final Map<int, List<dynamic>> _documentosPorContrato = {};
   final Map<int, bool> _cargandoDocumentos = {};
   final Map<int, bool> _subiendo = {};
@@ -40,7 +38,6 @@ class _ContratosScreenState extends State<ContratosScreen> {
       _cargando = false;
     });
 
-    // Una vez tenemos los contratos, pedimos los documentos de cada uno.
     for (final contrato in _contratos) {
       final contratoId = contrato['id'] ?? 0;
       _cargarDocumentos(contratoId);
@@ -91,7 +88,6 @@ class _ContratosScreenState extends State<ContratosScreen> {
       ),
     );
 
-    // Refrescamos SOLO los documentos de este contrato, no toda la pantalla.
     if (exito) {
       await _cargarDocumentos(contratoId);
     }
@@ -160,8 +156,6 @@ class _ContratosScreenState extends State<ContratosScreen> {
     final urlRelativa = doc['url'] ?? '';
     if (urlRelativa.isEmpty) return;
 
-    // El backend guarda una ruta relativa (ej: "uploads/123_recibo.pdf").
-    // La combinamos con la URL base del servidor para armar el link real.
     final urlCompleta = '${ApiService.serverUrl}/$urlRelativa';
 
     final uri = Uri.parse(urlCompleta);
@@ -356,7 +350,6 @@ class _ContratosScreenState extends State<ContratosScreen> {
                                 ),
                                 const SizedBox(height: 14),
 
-                                // --- Lista de documentos ya subidos ---
                                 if (cargandoDocs)
                                   const Padding(
                                     padding: EdgeInsets.symmetric(vertical: 8),
@@ -379,12 +372,15 @@ class _ContratosScreenState extends State<ContratosScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  ...documentos.map((doc) {
+                                  ...documentos.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final doc = entry.value;
                                     final documentoId = doc['id'];
                                     final eliminandoEste =
                                         _eliminando[documentoId] ?? false;
 
                                     return Padding(
+                                      key: ValueKey('doc_${contratoId}_${documentoId ?? index}'),
                                       padding: const EdgeInsets.only(bottom: 8),
                                       child: Container(
                                         decoration: BoxDecoration(
@@ -392,6 +388,7 @@ class _ContratosScreenState extends State<ContratosScreen> {
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: Row(
+                                          mainAxisSize: MainAxisSize.max,
                                           children: [
                                             Expanded(
                                               child: InkWell(
@@ -430,25 +427,40 @@ class _ContratosScreenState extends State<ContratosScreen> {
                                                 ),
                                               ),
                                             ),
-                                            eliminandoEste
-                                                ? const Padding(
-                                                    padding: EdgeInsets.symmetric(horizontal: 14),
-                                                    child: SizedBox(
-                                                      height: 16,
-                                                      width: 16,
-                                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                            Padding(
+                                              padding: const EdgeInsets.only(right: 4),
+                                              child: eliminandoEste
+                                                  ? const Padding(
+                                                      padding: EdgeInsets.symmetric(horizontal: 14),
+                                                      child: SizedBox(
+                                                        height: 16,
+                                                        width: 16,
+                                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                                      ),
+                                                    )
+                                                  : Tooltip(
+                                                      message: 'Eliminar documento',
+                                                      child: InkWell(
+                                                        borderRadius: BorderRadius.circular(20),
+                                                        onTap: () =>
+                                                            _confirmarEliminarDocumento(contratoId, doc),
+                                                        child: Container(
+                                                          width: 36,
+                                                          height: 36,
+                                                          alignment: Alignment.center,
+                                                          child: const Text(
+                                                            'X',
+                                                            style: TextStyle(
+                                                              color: Colors.red,
+                                                              fontSize: 16,
+                                                              fontWeight: FontWeight.w900,
+                                                              fontFamily: 'Nunito',
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
                                                     ),
-                                                  )
-                                                : IconButton(
-                                                    icon: const Icon(
-                                                      Icons.delete_outline_rounded,
-                                                      size: 20,
-                                                      color: Colors.red,
-                                                    ),
-                                                    tooltip: 'Eliminar documento',
-                                                    onPressed: () =>
-                                                        _confirmarEliminarDocumento(contratoId, doc),
-                                                  ),
+                                            ),
                                           ],
                                         ),
                                       ),

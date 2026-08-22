@@ -3,8 +3,7 @@ import 'package:http/http.dart' as http;
 import '../screens/comprobante_model.dart';
 class ComprobanteService {
   // Ajusta esta URL base a la de tu backend desplegado en Railway.
-  static const String baseUrl = 'https://TU-BACKEND.up.railway.app/api/comprobantes';
-
+static const String baseUrl = 'https://api.aldiaapp.org/api/v1/comprobantes';
   /// Sube un comprobante (imagen o PDF) para un contrato.
   /// [bytes] son los bytes del archivo leídos con file_picker.
   Future<Comprobante> subirComprobante({
