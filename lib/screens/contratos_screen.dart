@@ -3,13 +3,16 @@ import 'package:aldia/theme/app_theme.dart';
 import 'package:aldia/services/api_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:aldia/screens/comprobantes_screen.dart';
 
 class ContratosScreen extends StatefulWidget {
   final int usuarioId;
+  final String nombreUsuario;
 
   const ContratosScreen({
     super.key,
     required this.usuarioId,
+    required this.nombreUsuario,
   });
 
   @override
@@ -169,6 +172,19 @@ class _ContratosScreenState extends State<ContratosScreen> {
         ),
       );
     }
+  }
+
+  void _verComprobantes(int contratoId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ComprobantesScreen(
+          contratoId: contratoId,
+          usuarioActual: widget.nombreUsuario,
+          esArrendador: true,
+        ),
+      ),
+    );
   }
 
   IconData _iconoPorTipo(String? tipo) {
@@ -493,6 +509,27 @@ class _ContratosScreenState extends State<ContratosScreen> {
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.azulPrincipal,
+                                    minimumSize: const Size(double.infinity, 44),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                OutlinedButton.icon(
+                                  onPressed: () => _verComprobantes(contratoId),
+                                  icon: const Icon(Icons.receipt_long_rounded, size: 18, color: AppColors.esmeralda),
+                                  label: const Text(
+                                    'Ver comprobantes y pagos',
+                                    style: TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                      color: AppColors.esmeralda,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: AppColors.esmeralda, width: 1.5),
                                     minimumSize: const Size(double.infinity, 44),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
