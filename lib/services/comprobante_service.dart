@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../screens/comprobante_model.dart';
+
 class ComprobanteService {
   // Ajusta esta URL base a la de tu backend desplegado en Railway.
-static const String baseUrl = 'https://api.aldiaapp.org/api/v1/comprobantes';
+  static const String baseUrl = 'https://api.aldiaapp.org/api/v1/comprobantes';
+
   /// Sube un comprobante (imagen o PDF) para un contrato.
   /// [bytes] son los bytes del archivo leídos con file_picker.
   Future<Comprobante> subirComprobante({
@@ -44,6 +46,16 @@ static const String baseUrl = 'https://api.aldiaapp.org/api/v1/comprobantes';
       return data.map((json) => Comprobante.fromJson(json)).toList();
     } else {
       throw Exception('No se pudieron cargar los comprobantes.');
+    }
+  }
+
+  /// Elimina un comprobante por su id.
+  Future<void> eliminarComprobante(int comprobanteId) async {
+    final uri = Uri.parse('$baseUrl/$comprobanteId');
+    final response = await http.delete(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('No se pudo eliminar el comprobante.');
     }
   }
 }

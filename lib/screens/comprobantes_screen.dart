@@ -100,6 +100,45 @@ class _ComprobantesScreenState extends State<ComprobantesScreen> {
     }
   }
 
+  Future<void> _confirmarEliminarComprobante(Comprobante comprobante) async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          '¿Eliminar comprobante?',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          'Se eliminará "${comprobante.nombreArchivo}" permanentemente. Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancelar', style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Eliminar',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmado != true) return;
+
+    try {
+      await _service.eliminarComprobante(comprobante.id);
+      _mostrarMensaje('Comprobante eliminado.');
+      await _cargarComprobantes();
+    } catch (e) {
+      _mostrarMensaje('Error al eliminar el comprobante.');
+    }
+  }
+
   void _mostrarMensaje(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
   }
@@ -177,6 +216,7 @@ class _ComprobantesScreenState extends State<ComprobantesScreen> {
         return _ComprobanteTile(
           comprobante: comprobante,
           onTap: () => _abrirComprobante(comprobante),
+          onDelete: () => _confirmarEliminarComprobante(comprobante),
         );
       },
     );
@@ -227,8 +267,13 @@ class _BotonSubirComprobante extends StatelessWidget {
 class _ComprobanteTile extends StatefulWidget {
   final Comprobante comprobante;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
-  const _ComprobanteTile({required this.comprobante, required this.onTap});
+  const _ComprobanteTile({
+    required this.comprobante,
+    required this.onTap,
+    required this.onDelete,
+  });
 
   @override
   State<_ComprobanteTile> createState() => _ComprobanteTileState();
@@ -300,6 +345,24 @@ class _ComprobanteTileState extends State<_ComprobanteTile> {
                 ),
               ),
               Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+              const SizedBox(width: 4),
+              InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: widget.onDelete,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'X',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
