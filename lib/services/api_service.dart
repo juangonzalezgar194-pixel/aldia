@@ -152,6 +152,27 @@ static const String serverUrl = 'https://api.aldiaapp.org';
     }
   }
 
+  // CREAR INMUEBLE
+  static Future<Map<String, dynamic>?> crearInmueble(Map<String, dynamic> inmueble) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/inmuebles'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(inmueble),
+      );
+      print('STATUS: ${response.statusCode}');
+      print('BODY: ${response.body}');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error de conexión: $e');
+      return null;
+    }
+  }
+
   // CREAR CONTRATO
   static Future<Map<String, dynamic>?> crearContrato(Map<String, dynamic> contrato) async {
     try {

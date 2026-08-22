@@ -444,11 +444,18 @@ class _DashboardArrendadorState extends State<_DashboardArrendador> {
   void _mostrarFormularioInmueble(BuildContext context) {
     final formKey = GlobalKey<FormState>();
     final direccionCtrl = TextEditingController();
+    final ciudadCtrl = TextEditingController();
+    final departamentoCtrl = TextEditingController();
     final descripcionCtrl = TextEditingController();
-    final valorCtrl = TextEditingController();
-    final inquilinoCtrl = TextEditingController();
-    final fechaInicioCtrl = TextEditingController();
+    String tipoSeleccionado = 'APARTAMENTO';
     bool guardando = false;
+
+    const tiposDisponibles = [
+      {'valor': 'APARTAMENTO', 'label': 'Apartamento'},
+      {'valor': 'CASA', 'label': 'Casa'},
+      {'valor': 'HABITACION', 'label': 'Habitación'},
+      {'valor': 'LOCAL', 'label': 'Local'},
+    ];
 
     showModalBottomSheet(
       context: context,
@@ -494,42 +501,66 @@ class _DashboardArrendadorState extends State<_DashboardArrendador> {
                       const SizedBox(height: 24),
                       _campoFormulario(controlador: direccionCtrl, etiqueta: 'Dirección del inmueble', icono: Icons.location_on_rounded, validar: (v) => v!.isEmpty ? 'Ingresa la dirección' : null),
                       const SizedBox(height: 14),
-                      _campoFormulario(controlador: descripcionCtrl, etiqueta: 'Descripción (ej: Apto 201, casa, local)', icono: Icons.home_work_outlined, validar: (v) => v!.isEmpty ? 'Ingresa una descripción' : null),
+                      _campoFormulario(controlador: ciudadCtrl, etiqueta: 'Ciudad', icono: Icons.location_city_rounded, validar: (v) => v!.isEmpty ? 'Ingresa la ciudad' : null),
                       const SizedBox(height: 14),
-                      _campoFormulario(controlador: valorCtrl, etiqueta: 'Valor del arriendo', icono: Icons.attach_money_rounded, teclado: TextInputType.number, validar: (v) => v!.isEmpty ? 'Ingresa el valor' : null),
+                      _campoFormulario(controlador: departamentoCtrl, etiqueta: 'Departamento (opcional)', icono: Icons.map_rounded),
                       const SizedBox(height: 14),
-                      _campoFormulario(controlador: inquilinoCtrl, etiqueta: 'Nombre del arrendatario', icono: Icons.person_add_alt_1_rounded, validar: (v) => v!.isEmpty ? 'Ingresa el nombre' : null),
-                      const SizedBox(height: 14),
-                      _campoFormulario(
-                        controlador: fechaInicioCtrl,
-                        etiqueta: 'Fecha inicio del contrato',
-                        icono: Icons.calendar_today_rounded,
-                        soloLectura: true,
-                        validar: (v) => v!.isEmpty ? 'Selecciona la fecha' : null,
-                        onTap: () async {
-                          final fecha = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2035),
+                      DropdownButtonFormField<String>(
+                        value: tipoSeleccionado,
+                        style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.azulPrincipal),
+                        decoration: InputDecoration(
+                          labelText: 'Tipo de inmueble',
+                          labelStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grisMedio),
+                          prefixIcon: const Icon(Icons.home_work_outlined, color: AppColors.azulPrincipal, size: 20),
+                          filled: true,
+                          fillColor: AppColors.grisClaro,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        ),
+                        items: tiposDisponibles.map((t) {
+                          return DropdownMenuItem<String>(
+                            value: t['valor'],
+                            child: Text(t['label']!),
                           );
-                          if (fecha != null) {
-                            fechaInicioCtrl.text = '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}';
-                          }
+                        }).toList(),
+                        onChanged: (valor) {
+                          if (valor != null) setModalState(() => tipoSeleccionado = valor);
                         },
                       ),
+                      const SizedBox(height: 14),
+                      _campoFormulario(controlador: descripcionCtrl, etiqueta: 'Descripción (ej: Apto 201, casa, local)', icono: Icons.description_outlined, validar: (v) => v!.isEmpty ? 'Ingresa una descripción' : null),
                       const SizedBox(height: 28),
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
                           onPressed: guardando ? null : () async {
-                            if (formKey.currentState!.validate()) {
-                              setModalState(() => guardando = true);
-                              await Future.delayed(const Duration(seconds: 1));
+                            if (!formKey.currentState!.validate()) return;
+                            setModalState(() => guardando = true);
+
+                            final resultado = await ApiService.crearInmueble({
+                              'direccion': direccionCtrl.text.trim(),
+                              'ciudad': ciudadCtrl.text.trim(),
+                              'departamento': departamentoCtrl.text.trim(),
+                              'tipo': tipoSeleccionado,
+                              'descripcion': descripcionCtrl.text.trim(),
+                              'propietarioId': widget.usuarioId,
+                              'activo': true,
+                              'disponible': true,
+                            });
+
+                            setModalState(() => guardando = false);
+                            if (!context.mounted) return;
+
+                            if (resultado != null) {
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Inmueble registrado ✓'), backgroundColor: AppColors.esmeralda),
+                              );
+                              _cargarContratos();
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('❌ No se pudo registrar el inmueble. Intenta de nuevo.'), backgroundColor: Colors.red),
                               );
                             }
                           },
