@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -28,9 +29,18 @@ public class ConfirmacionPagoController {
     @Autowired
     private NotificacionService notificacionService;
 
-    // El arrendatario confirma que pagó en efectivo (sin subir comprobante)
+    public static class PagoEfectivoRequest {
+        public BigDecimal valor;
+        public String nombrePagador;
+        public LocalDate fechaPago;
+    }
+
+    // El arrendatario reporta que pagó en efectivo (queda PENDIENTE de confirmar)
     @PostMapping("/efectivo/{contratoId}")
-    public ResponseEntity<?> confirmarPagoEfectivo(@PathVariable Long contratoId) {
+    public ResponseEntity<?> reportarPagoEfectivo(
+            @PathVariable Long contratoId,
+            @RequestBody PagoEfectivoRequest datos) {
+
         Optional<Contrato> contratoOpt = contratoRepository.findById(contratoId);
         if (contratoOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -39,14 +49,17 @@ public class ConfirmacionPagoController {
 
         LocalDate periodo = PeriodoPagoUtil.calcularFechaPagoMesActual(contrato.getDiaPago(), LocalDate.now());
 
-        // 1. Guardar la confirmación
         ConfirmacionPago confirmacion = new ConfirmacionPago();
         confirmacion.setContratoId(contratoId);
         confirmacion.setPeriodoPago(periodo);
         confirmacion.setMetodo(ConfirmacionPago.MetodoConfirmacion.EFECTIVO);
+        confirmacion.setEstado(ConfirmacionPago.EstadoConfirmacion.PENDIENTE);
+        confirmacion.setValor(datos.valor);
+        confirmacion.setNombrePagador(datos.nombrePagador);
+        confirmacion.setFechaPago(datos.fechaPago);
         ConfirmacionPago guardada = confirmacionPagoRepository.save(confirmacion);
 
-        // 2. Notificar al arrendador
+        // Notificar al arrendador que hay un pago en efectivo por revisar
         Notificacion notiArrendador = new Notificacion();
         notiArrendador.setContratoId(contratoId);
         notiArrendador.setUsuarioDestinoId(contrato.getArrendadorId());
@@ -56,21 +69,50 @@ public class ConfirmacionPagoController {
         notiArrendador.setFechaPagoReferencia(periodo);
         notificacionService.crearYEnviar(notiArrendador);
 
-        // 3. Confirmar al arrendatario que su confirmación quedó registrada
-        Notificacion notiArrendatario = new Notificacion();
-        notiArrendatario.setContratoId(contratoId);
-        notiArrendatario.setUsuarioDestinoId(contrato.getArrendatarioId());
-        notiArrendatario.setOrigen(Notificacion.OrigenNotificacion.AUTOMATICA);
-        notiArrendatario.setTipo(Notificacion.TipoNotificacion.PAGO_REGISTRADO);
-        notiArrendatario.setCanal(Notificacion.CanalNotificacion.EMAIL);
-        notiArrendatario.setFechaPagoReferencia(periodo);
-        notificacionService.crearYEnviar(notiArrendatario);
-
         return ResponseEntity.ok(guardada);
+    }
+
+    // El arrendador confirma (aprueba) un pago en efectivo reportado
+    @PutMapping("/{id}/confirmar")
+    public ResponseEntity<?> confirmarPago(@PathVariable Long id) {
+        Optional<ConfirmacionPago> confirmacionOpt = confirmacionPagoRepository.findById(id);
+        if (confirmacionOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        ConfirmacionPago confirmacion = confirmacionOpt.get();
+        confirmacion.setEstado(ConfirmacionPago.EstadoConfirmacion.CONFIRMADO);
+        ConfirmacionPago actualizada = confirmacionPagoRepository.save(confirmacion);
+
+        // Avisar al arrendatario que su pago quedó confirmado
+        Optional<Contrato> contratoOpt = contratoRepository.findById(confirmacion.getContratoId());
+        if (contratoOpt.isPresent()) {
+            Contrato contrato = contratoOpt.get();
+            Notificacion notiArrendatario = new Notificacion();
+            notiArrendatario.setContratoId(confirmacion.getContratoId());
+            notiArrendatario.setUsuarioDestinoId(contrato.getArrendatarioId());
+            notiArrendatario.setOrigen(Notificacion.OrigenNotificacion.AUTOMATICA);
+            notiArrendatario.setTipo(Notificacion.TipoNotificacion.PAGO_REGISTRADO);
+            notiArrendatario.setCanal(Notificacion.CanalNotificacion.EMAIL);
+            notiArrendatario.setFechaPagoReferencia(confirmacion.getPeriodoPago());
+            notificacionService.crearYEnviar(notiArrendatario);
+        }
+
+        return ResponseEntity.ok(actualizada);
     }
 
     @GetMapping("/contrato/{contratoId}")
     public ResponseEntity<?> porContrato(@PathVariable Long contratoId) {
         return ResponseEntity.ok(confirmacionPagoRepository.findByContratoId(contratoId));
+    }
+
+    // Pagos en efectivo pendientes de un contrato (para la pantalla del arrendador)
+    @GetMapping("/contrato/{contratoId}/pendientes")
+    public ResponseEntity<?> pendientesPorContrato(@PathVariable Long contratoId) {
+        var lista = confirmacionPagoRepository.findByContratoId(contratoId).stream()
+                .filter(c -> c.getMetodo() == ConfirmacionPago.MetodoConfirmacion.EFECTIVO
+                        && c.getEstado() == ConfirmacionPago.EstadoConfirmacion.PENDIENTE)
+                .toList();
+        return ResponseEntity.ok(lista);
     }
 }
