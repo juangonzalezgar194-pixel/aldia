@@ -674,8 +674,9 @@ class _DashboardArrendadorState extends State<_DashboardArrendador> {
                 _buildSeccionTitulo('Acciones rápidas'),
                 const SizedBox(height: 14),
                 Wrap(
-                  alignment: WrapAlignment.spaceAround,
-                  runSpacing: 16,
+                  alignment: WrapAlignment.center,
+                  spacing: 20,
+                  runSpacing: 20,
                   children: [
                     _AccionRapida(icono: Icons.add_home_rounded, label: 'Nuevo\ninmueble', color: AppColors.azulPrincipal, onTap: () => _mostrarFormularioInmueble(context)),
                     _AccionRapida(icono: Icons.person_add_alt_1_rounded, label: 'Agregar\ninquilino', color: AppColors.esmeralda, onTap: () => _mostrarFormularioInquilino(context)),
