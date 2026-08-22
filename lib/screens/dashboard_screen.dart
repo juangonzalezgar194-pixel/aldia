@@ -329,6 +329,117 @@ class _DashboardArrendadorState extends State<_DashboardArrendador> {
     });
   }
 
+  // ── NUEVO: selector/acceso rápido a comprobantes ──────────────
+  void _mostrarSelectorComprobantes(BuildContext context) {
+    if (_contratos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Todavía no tienes contratos registrados.')),
+      );
+      return;
+    }
+
+    if (_contratos.length == 1) {
+      _irAComprobantes(context, _contratos.first);
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDDE3EC),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Elige un contrato',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.azulPrincipal,
+                  fontFamily: 'Nunito',
+                ),
+              ),
+              const SizedBox(height: 16),
+              ..._contratos.map((contrato) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _irAComprobantes(context, contrato);
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.grisClaro,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.home_work_rounded,
+                              color: AppColors.azulPrincipal, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Inmueble #${contrato['inmuebleId']} · Contrato #${contrato['id']}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.azulPrincipal,
+                                fontFamily: 'Nunito',
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded,
+                              color: AppColors.grisMedio),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _irAComprobantes(BuildContext context, dynamic contrato) {
+    final contratoId = contrato['id'];
+    final valorMensual = (contrato['valorMensual'] as num?)?.toDouble();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ComprobantesScreen(
+          contratoId: contratoId,
+          usuarioActual: widget.nombreUsuario,
+          esArrendador: true,
+          valorMensual: valorMensual,
+        ),
+      ),
+    );
+  }
+
   // ── BOTTOM SHEET NUEVO INMUEBLE ──────────────────────────────
   void _mostrarFormularioInmueble(BuildContext context) {
     final formKey = GlobalKey<FormState>();
@@ -562,8 +673,9 @@ class _DashboardArrendadorState extends State<_DashboardArrendador> {
                 const SizedBox(height: 28),
                 _buildSeccionTitulo('Acciones rápidas'),
                 const SizedBox(height: 14),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                Wrap(
+                  alignment: WrapAlignment.spaceAround,
+                  runSpacing: 16,
                   children: [
                     _AccionRapida(icono: Icons.add_home_rounded, label: 'Nuevo\ninmueble', color: AppColors.azulPrincipal, onTap: () => _mostrarFormularioInmueble(context)),
                     _AccionRapida(icono: Icons.person_add_alt_1_rounded, label: 'Agregar\ninquilino', color: AppColors.esmeralda, onTap: () => _mostrarFormularioInquilino(context)),
@@ -575,6 +687,12 @@ class _DashboardArrendadorState extends State<_DashboardArrendador> {
                     usuarioId: widget.usuarioId,
                     nombreUsuario: widget.nombreUsuario,
                     ))),
+                    ),
+                    _AccionRapida(
+                      icono: Icons.receipt_long_rounded,
+                      label: 'Ver\ncomprobantes',
+                      color: AppColors.esmeralda,
+                      onTap: () => _mostrarSelectorComprobantes(context),
                     ),
                   ],
                 ),
