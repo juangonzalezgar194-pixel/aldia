@@ -101,9 +101,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           );
         case 1:
           return ContratosScreen(
-          usuarioId: widget.usuarioId,
-           nombreUsuario: widget.nombreUsuario,
-           );
+            usuarioId: widget.usuarioId,
+            nombreUsuario: widget.nombreUsuario,
+          );
         case 2:
           return PerfilScreen(usuarioId: widget.usuarioId, rol: widget.rol);
         default:
@@ -864,16 +864,19 @@ class _DashboardArrendatarioState extends State<_DashboardArrendatario> {
                           );
                           return;
                         }
-                        final contratoId = _contratos.first['id'];
+                        final contrato = _contratos.first;
+                        final contratoId = contrato['id'];
+                        final valorMensual = (contrato['valorMensual'] as num?)?.toDouble();
                         Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                        builder: (_) => ComprobantesScreen(
-                        contratoId: contratoId,
-                        usuarioActual: widget.nombreUsuario,
-                        esArrendador: false,
-                        ),
-                        ),
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ComprobantesScreen(
+                              contratoId: contratoId,
+                              usuarioActual: widget.nombreUsuario,
+                              esArrendador: false,
+                              valorMensual: valorMensual,
+                            ),
+                          ),
                         );
                       },
                     ),

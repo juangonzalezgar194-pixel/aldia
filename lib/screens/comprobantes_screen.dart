@@ -25,12 +25,14 @@ class ComprobantesScreen extends StatefulWidget {
   final dynamic contratoId; // acepta int o String según venga del JSON de tu API
   final String usuarioActual; // nombre o correo del usuario logueado
   final bool esArrendador; // true = ve pagos por confirmar, false = puede reportar pago en efectivo
+  final double? valorMensual; // valor del arriendo del contrato, para precargar el formulario
 
   const ComprobantesScreen({
     super.key,
     required this.contratoId,
     required this.usuarioActual,
     required this.esArrendador,
+    this.valorMensual,
   });
 
   @override
@@ -115,7 +117,9 @@ class _ComprobantesScreenState extends State<ComprobantesScreen> {
   // ── FORMULARIO: reportar pago en efectivo (arrendatario) ──────────
   void _mostrarFormularioPagoEfectivo() {
     final formKey = GlobalKey<FormState>();
-    final valorCtrl = TextEditingController();
+    final valorCtrl = TextEditingController(
+      text: widget.valorMensual != null ? widget.valorMensual!.toStringAsFixed(0) : '',
+    );
     final nombreCtrl = TextEditingController(text: widget.usuarioActual);
     final fechaCtrl = TextEditingController(
       text: DateFormat('yyyy-MM-dd').format(DateTime.now()),
